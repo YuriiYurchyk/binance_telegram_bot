@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Telegram\Bot\Api;
 
 class Handler extends ExceptionHandler
 {
@@ -35,7 +36,12 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->reportable(function (Throwable $e) {
-            //
+            $telegram = app(Api::class);
+
+            $telegram->sendMessage([
+                'chat_id' => 304532953,
+                'text' => (string) $e,
+            ]);
         });
     }
 }
