@@ -9,7 +9,7 @@ server {
 #    ssl_certificate          /etc/nginx/certs/docker.loc.crt;
 #    ssl_certificate_key   /etc/nginx/certs/docker.loc.key;
 
-    root /var/www/public;
+    root /var/www/public_html;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
