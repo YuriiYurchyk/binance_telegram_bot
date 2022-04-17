@@ -38,10 +38,16 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             $telegram = app(Api::class);
 
-            $telegram->sendMessage([
-                'chat_id' => 304532953,
-                'text' => (string) $e,
-            ]);
+            $ex = (string) $e;
+
+            $messages = mb_str_split($ex, 1000);
+
+            foreach ($messages as $message) {
+                $telegram->sendMessage([
+                    'chat_id' => 304532953,
+                    'text' => $message,
+                ]);
+            }
         });
     }
 }

@@ -27,10 +27,17 @@ class TelegramBot extends Command
             return 0;
         }
 
-        $coins = '';
-        $newTradePairs->each(function (TradePair $tradePair) use (&$coins) {
-            $coins .= $tradePair->code . PHP_EOL;
+        $messages = [];
+        $messageBlock = '';
+        $newTradePairs->each(function (TradePair $tradePair) use (&$messages, &$messageBlock) {
+            $messageBlock .= $tradePair->code . PHP_EOL;
+
+            if (mb_strlen($messageBlock) > 1000) {
+                $messages[] = $messageBlock;
+                $messageBlock = '';
+            }
         });
+        $messages[] = $messageBlock;
 
         // щоб привернути увагу
         foreach (range(5, 0) as $item) {
@@ -41,12 +48,15 @@ class TelegramBot extends Command
 
             sleep(1);
         }
-        $response = $telegram->sendMessage([
-            'chat_id' => 304532953,
-            'text' => $coins,
-        ]);
 
-        $newTradePairs->each(function (TradePair $tradePair) use (&$coins) {
+        foreach ($messages as $message) {
+            $response = $telegram->sendMessage([
+                'chat_id' => 304532953,
+                'text' => $message,
+            ]);
+        }
+
+        $newTradePairs->each(function (TradePair $tradePair) use (&$messages) {
             $tradePair->update(['new' => 0]);
         });
 

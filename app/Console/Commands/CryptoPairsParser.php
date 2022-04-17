@@ -36,10 +36,10 @@ class CryptoPairsParser extends Command
             $tradePair->code = $tradePairCode;
             $tradePair->status = $status;
             $tradePair->save();
+        }
 
-            if (TradePair::active()->new()->exists()) {
-                Artisan::call(command: 'bot:run');
-            }
+        if (TradePair::active()->new()->exists()) {
+            Artisan::call(command: 'bot:run');
         }
 
         return 0;
