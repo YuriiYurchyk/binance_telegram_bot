@@ -31,6 +31,15 @@ class BinanceNewsParser extends Command
             $this->sendUpdatesToTg();
         }
 
+
+        sleep(30);
+        $this->loadFromBinance();
+
+        if (BinanceNews::scopeIsNew(BinanceNews::query())->exists()) {
+            $this->sendUpdatesToTg();
+        }
+
+
         return 0;
     }
 
@@ -60,7 +69,7 @@ class BinanceNewsParser extends Command
             BinanceNews::create([
                 'code' => $article['code'],
                 'title' => $article['title'],
-                'release_date' => Carbon::createFromTimestampMs((string) $article['releaseDate']),
+                'release_date' => Carbon::createFromTimestampMs($article['releaseDate']),
                 'is_new' => true,
             ]);
         }
