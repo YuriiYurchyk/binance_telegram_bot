@@ -14,7 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::create('binance_news', function (Blueprint $table) {
-            $table->string('code')->primary();
+            $table->id();
+            $table->string('code')->unique();
             $table->string('title');
             $table->timestamp('release_date');
             $table->boolean('is_new');

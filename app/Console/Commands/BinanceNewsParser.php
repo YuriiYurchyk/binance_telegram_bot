@@ -71,14 +71,13 @@ class BinanceNewsParser extends Command
         /** @var BinanceNews[]|Collection $newBinanceNews */
         $newBinanceNews = BinanceNews::scopeIsNew(BinanceNews::query())
                                      ->orderBy('release_date')->get();
-        $this->markBinanceNewsAsOld($newBinanceNews);
 
-        return;
         $messages = $this->prepareBinanceNewsForSend($newBinanceNews);
         foreach ($messages as $messageBlock) {
             $message = implode(PHP_EOL . PHP_EOL, $messageBlock);
             $this->sendTgMessages($message);
         }
+        $this->markBinanceNewsAsOld($newBinanceNews);
 
         // щоб привернути увагу
         foreach (range(5, 0) as $item) {

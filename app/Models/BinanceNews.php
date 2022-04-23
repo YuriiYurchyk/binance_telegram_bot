@@ -9,10 +9,6 @@ class BinanceNews extends Model
 {
     use HasFactory;
 
-    public $primaryKey = 'code';
-
-    protected $keyType = 'string';
-
     protected $fillable = [
         'code',
         'title',
