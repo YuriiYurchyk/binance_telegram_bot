@@ -26,9 +26,9 @@ class BinanceNewsParser extends Command
         //        BinanceNews::truncate();
 
         $this->loadFromBinance();
-        if (BinanceNews::scopeIsNew(BinanceNews::query())->orderBy('release_date')->exists()) {
-            $this->sendUpdatesToTg();
-        }
+//        if (BinanceNews::scopeIsNew(BinanceNews::query())->exists()) {
+//            $this->sendUpdatesToTg();
+//        }
 
         return 0;
     }
