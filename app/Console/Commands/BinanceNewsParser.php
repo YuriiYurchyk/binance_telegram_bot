@@ -59,7 +59,7 @@ class BinanceNewsParser extends Command
             BinanceNews::create([
                 'code' => $article['code'],
                 'title' => $article['title'],
-                'release_date' => Carbon::createFromTimestampMs($article['releaseDate']),
+                'release_date' => Carbon::createFromTimestampMs((string)$article['releaseDate']),
                 'is_new' => true,
             ]);
         }
@@ -101,7 +101,7 @@ class BinanceNewsParser extends Command
     private function markBinanceNewsAsOld(Collection $newNews)
     {
         $newNews->each(function (BinanceNews $binanceNews) {
-            $binanceNews->update(['is_new' => 0]);
+            $binanceNews->is_new = 0;
             $binanceNews->save();
         });
     }
@@ -117,6 +117,7 @@ class BinanceNewsParser extends Command
         foreach ($newNews as $news) {
             $newsForTg[] = $news->getForTelegram();
         }
+
         $newsForTg = array_chunk($newsForTg, 10);
 
         return $newsForTg;
