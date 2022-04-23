@@ -39,6 +39,13 @@ class TelegramBot extends Command
         });
         $messages[] = $messageBlock;
 
+        foreach ($messages as $message) {
+            $response = $telegram->sendMessage([
+                'chat_id' => 304532953,
+                'text' => $message,
+            ]);
+        }
+
         // щоб привернути увагу
         foreach (range(5, 0) as $item) {
             $telegram->sendMessage([
@@ -47,13 +54,6 @@ class TelegramBot extends Command
             ]);
 
             sleep(1);
-        }
-
-        foreach ($messages as $message) {
-            $response = $telegram->sendMessage([
-                'chat_id' => 304532953,
-                'text' => $message,
-            ]);
         }
 
         $newTradePairs->each(function (TradePair $tradePair) use (&$messages) {

@@ -9,7 +9,7 @@ use Artisan;
 
 class CryptoPairsParser extends Command
 {
-    protected $signature = 'binance:run';
+    protected $signature = 'binance:crypto-pairs';
 
     protected $description = 'Command description';
 
