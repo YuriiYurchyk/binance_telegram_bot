@@ -23,7 +23,7 @@ class BinanceNewsParser extends Command
 
     public function handle()
     {
-        //        BinanceNews::truncate();
+//        BinanceNews::truncate();
 
         $this->loadFromBinance();
 
@@ -60,7 +60,7 @@ class BinanceNewsParser extends Command
             BinanceNews::create([
                 'code' => $article['code'],
                 'title' => $article['title'],
-                'release_date' => Carbon::createFromTimestampMs((string)$article['releaseDate']),
+                'release_date' => Carbon::createFromTimestampMs((string) $article['releaseDate']),
                 'is_new' => true,
             ]);
         }
@@ -102,8 +102,7 @@ class BinanceNewsParser extends Command
     private function markBinanceNewsAsOld(Collection $newNews)
     {
         $newNews->each(function (BinanceNews $binanceNews) {
-            $binanceNews->is_new = 0;
-            $binanceNews->save();
+            $binanceNews->update(['is_new' => false]);
         });
     }
 
