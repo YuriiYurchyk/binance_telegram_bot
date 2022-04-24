@@ -9,6 +9,7 @@ use App\Models\BinanceNews;
 use Telegram\Bot\Api;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Log;
 
 class BinanceNewsParser extends Command
 {
@@ -25,20 +26,22 @@ class BinanceNewsParser extends Command
     {
 //        BinanceNews::truncate();
 
+        Log::info('Start handle Binance Crypto News');
         $this->loadFromBinance();
-
         if (BinanceNews::scopeIsNew(BinanceNews::query())->exists()) {
             $this->sendUpdatesToTg();
         }
-
+        Log::info('End handle Binance Crypto News');
 
         sleep(30);
+
+        Log::info('Start handle Binance Crypto News (after sleep)');
         $this->loadFromBinance();
 
         if (BinanceNews::scopeIsNew(BinanceNews::query())->exists()) {
             $this->sendUpdatesToTg();
         }
-
+        Log::info('End handle Binance Crypto News (after sleep)');
 
         return 0;
     }
