@@ -19,9 +19,8 @@ return new class extends Migration
             $table->string('title');
             $table->boolean('is_new');
             $table->timestamp('release_date')->nullable();
-            $table->timestamp('created_at', 0)->nullable()->useCurrentOnUpdate();
-            $table->timestamp('updated_at', 0)->nullable();
-
+            $table->timestamp('created_at', 0)->nullable();
+            $table->timestamp('updated_at', 0)->nullable()->useCurrentOnUpdate();
         });
     }
 
