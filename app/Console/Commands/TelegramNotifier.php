@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Telegram\Bot\Api;
-use App\Models\TradePair;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\ParsedNews;
 
