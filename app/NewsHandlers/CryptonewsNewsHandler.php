@@ -42,7 +42,7 @@ class CryptonewsNewsHandler
 
     public function handle()
     {
-        Log::channel('Start handle Cryptonews.net');
+        Log::info('Start handle Cryptonews.net');
         $this->handlePages();
         Log::info('End handle Cryptonews.net');
 
