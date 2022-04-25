@@ -8,7 +8,7 @@ use Psr\Http\Message\UriInterface;
 use GuzzleHttp\Psr7\Uri;
 use Carbon\Carbon;
 
-class CryptonewsNewsListNewsNodeParser
+class CryptonewsNewsListNewsItemParser
 {
     private Crawler $crawler;
 

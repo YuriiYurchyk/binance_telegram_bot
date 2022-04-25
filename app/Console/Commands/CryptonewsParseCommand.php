@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Console\Commands;
 
@@ -7,46 +7,46 @@ use GuzzleHttp\Client;
 use App\Services\UrlPaginator;
 use Symfony\Component\DomCrawler\Crawler;
 use App\Parsers\CryptonewsNewsListParser;
-use App\Parsers\CryptonewsNewsListNewsNodeParser;
+use App\Parsers\CryptonewsNewsListNewsItemParser;
 use GuzzleHttp\Psr7\Uri;
 use App\Models\ParsedNews;
+use Psr\Http\Message\UriInterface;
 
 class CryptonewsParseCommand extends Command
 {
-    protected $signature = 'parser:cryptonews';
+    protected $signature = 'parser-news:cryptonews';
 
     protected $description = 'Command description';
 
-
-    private Uri $basePsrUri;
-
-    private string $newsPath;
+    private Uri|UriInterface $basePsrUri;
 
     private CryptonewsNewsListParser $newsListParser;
 
-    private CryptonewsNewsListNewsNodeParser $newsNodeParser;
+    private CryptonewsNewsListNewsItemParser $newsNodeParser;
+
+    private UrlPaginator $urlPaginator;
 
     public function __construct(private Client $httpClient)
     {
         parent::__construct();
 
-        $url = "https://cryptonews.net";
-        $this->newsPath = "/news/market/";
+        $url = "https://cryptonews.net/";
+        $newsUrl = "https://cryptonews.net/news/market/";
 
+        $newsPsrUrl = new Uri($newsUrl);
         $this->basePsrUri = new Uri($url);
+
         $this->newsListParser = new CryptonewsNewsListParser();
-        $this->newsNodeParser = new CryptonewsNewsListNewsNodeParser(clone $this->basePsrUri);
+        $this->newsNodeParser = new CryptonewsNewsListNewsItemParser(clone $this->basePsrUri);
+
+        $lastPage = 1;
+        $this->urlPaginator = new UrlPaginator(basePsrUri: $newsPsrUrl, lastPage: $lastPage);
     }
 
     public function handle()
     {
-        $lastPage = 1;
-
-        $newsPsrUrl = $this->basePsrUri->withPath($this->newsPath);
-        $urlPaginator = new UrlPaginator(basePsrUri: $newsPsrUrl, lastPage: $lastPage);
-
         while (true) {
-            $html = $this->getHtml($urlPaginator);
+            $html = $this->getHtml($this->urlPaginator);
             $crawler = new Crawler($html);
             $this->newsListParser->setCrawler($crawler);
 
@@ -54,15 +54,15 @@ class CryptonewsParseCommand extends Command
             $this->handleNewsNodes($newsNodes);
 
             // set last page number
-            if (null === $urlPaginator->getLastPage()) {
+            if (null === $this->urlPaginator->getLastPage()) {
                 $lastPage = $this->newsListParser->getLastPage();
-                $urlPaginator->setLastPage($lastPage);
+                $this->urlPaginator->setLastPage($lastPage);
             }
 
-            if ($urlPaginator->isLast()) {
+            if ($this->urlPaginator->isLast()) {
                 break;
             }
-            $urlPaginator->incrementPage();
+            $this->urlPaginator->incrementPage();
         }
 
         return 0;
@@ -75,12 +75,20 @@ class CryptonewsParseCommand extends Command
             $newsUrl = $this->newsNodeParser->getNewsUrl();
 
             $parsedNews = ParsedNews::where('url', $newsUrl)->first();
-            if (empty($parsedNews)
-                || (!empty($this->newsNodeParser->getPublishedDate())
-                    && empty($parsedNews->published_date))
+            if ($parsedNews
+                && empty($parsedNews->published_date)
+                && !empty($this->newsNodeParser->getPublishedDate())
             ) {
+                $parsedNews->published_date = $this->newsNodeParser->getPublishedDate();
+                $parsedNews->save();
+            }
+
+            if (!empty($parsedNews)) {
                 continue;
             }
+
+            $publishedDate = $this->newsNodeParser->getPublishedDate()
+                                                  ?->setTimezone(config('app.timezone'));
 
             /** @var ParsedNews $parsedNews */
             $parsedNews = ParsedNews::make();
@@ -88,7 +96,7 @@ class CryptonewsParseCommand extends Command
             $parsedNews->url = $newsUrl;
             $parsedNews->site_about = $this->newsNodeParser->getSiteAboutCurrentNewsUrl();
             $parsedNews->site_source = $this->basePsrUri->getHost();
-            $parsedNews->published_date = $this->newsNodeParser->getPublishedDate();
+            $parsedNews->published_date = $publishedDate;
             $parsedNews->is_new = 1;
             $parsedNews->save();
         }

@@ -16,8 +16,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('binance:news')->everyMinute();
-//        $schedule->command('bot:run')->everyMinute();
+        $schedule->command('parser-news:binance')->everyMinute();
+        $schedule->command('parser-news:cryptonews')->everyMinute();
+        //        $schedule->command('bot:run')->everyMinute();
     }
 
     /**
