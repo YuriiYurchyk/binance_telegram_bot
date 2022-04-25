@@ -6,10 +6,11 @@ use Illuminate\Console\Command;
 use Telegram\Bot\Api;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\ParsedNews;
+use Illuminate\Database\Eloquent\Builder;
 
 class NewsTelegramNotifier extends Command
 {
-    protected $signature = 'telegram:notify';
+    protected $signature = 'telegram-bot:notify';
 
     protected $description = 'Command description';
 
@@ -31,32 +32,47 @@ class NewsTelegramNotifier extends Command
     private function notifyAboutNewNews()
     {
         /** @var ParsedNews[]|Collection $newParsedNews */
-        $newParsedNews = ParsedNews::scopeIsNew(ParsedNews::query())
-                                   ->orderBy('published_date')->get();
 
+        $q = ParsedNews::query();
+        $q = ParsedNews::scopeIsNew($q)
+                       ->orderBy('published_date');
 
-        // todo повідомляти лише про новини про binance і які містять певні слова
+        $q->where('site_about', 'like', '%binance.com%')
+          ->where(function (Builder $q) {
+              $q->where('title', 'like', '%Adds%');
+              $q->orWhere('title', 'like', '%adds%');
+          })
+          ->where(function (Builder $q) {
+              $q->where('title', 'like', '%Trading%');
+              $q->orWhere('title', 'like', '%trading%');
+          });
 
+        $newParsedNews = $q->get();
+        $needNotify = 15 > $newParsedNews->count();
 
         $messages = $this->prepareParsedNewsForSend($newParsedNews);
-        foreach ($messages as $messageBlock) {
-            $message = implode(PHP_EOL . PHP_EOL, $messageBlock);
-            $this->sendTgMessages($message);
+        if ($needNotify) {
+            foreach ($messages as $messageBlock) {
+                $message = implode(PHP_EOL . PHP_EOL, $messageBlock);
+                $this->sendTgMessages($message);
+            }
         }
         $this->markParsedNewsAsOld($newParsedNews);
 
-        // щоб привернути увагу
-        foreach (range(5, 0) as $item) {
-            $message = $this->telegram->sendMessage([
-                'chat_id' => 304532953,
-                'text' => "NEW NEWS, Yurii",
-            ]);
+        if ($needNotify) {
+            // щоб привернути увагу
+            foreach (range(5, 0) as $item) {
+                $message = $this->telegram->sendMessage([
+                    'chat_id' => 304532953,
+                    'text' => "NEW NEWS, Yurii",
+                ]);
 
-            $this->telegram->deleteMessage([
-                'chat_id' => '304532953',
-                'message_id' => $message->messageId,
-            ]);
-            sleep(2);
+                $this->telegram->deleteMessage([
+                    'chat_id' => '304532953',
+                    'message_id' => $message->messageId,
+                ]);
+                sleep(2);
+            }
         }
     }
 

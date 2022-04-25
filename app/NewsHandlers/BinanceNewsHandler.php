@@ -30,27 +30,33 @@ class BinanceNewsHandler
         $this->urlPaginator = new UrlPaginator(
             basePsrUri: $newsPsrUrl,
             lastPage: $lastPage,
-            pageQueryParam: 'pageNo'
+            pageQueryParam: 'pageNo',
         );
     }
 
     public function handle()
     {
-        $this->begin();
+        Log::info('Start handle Binance.com News');
+        $this->handlePages();
+        Log::info('End handle Binance.com News');
 
         return 0;
     }
 
-    private function begin()
+    private function handlePages(): void
     {
-        Log::info('Start handle Binance Crypto News');
-        $this->loadNews();
-        Log::info('End handle Binance Crypto News');
+        while (true) {
+            $this->handlePage();
+            Log::info("Parse Binance.com page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
 
-        return 0;
+            if ($this->urlPaginator->isLast()) {
+                break;
+            }
+            $this->urlPaginator->incrementPage();
+        }
     }
 
-    private function loadNews(): void
+    private function handlePage(): void
     {
         $response = $this->httpClient->get($this->urlPaginator->getCurrentUrl(), [
             'headers' => [

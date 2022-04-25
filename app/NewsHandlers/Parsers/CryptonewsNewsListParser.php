@@ -29,6 +29,6 @@ class CryptonewsNewsListParser
         $paginationBlock = $this->crawler->filter('#pagination a');
         $lastPageNodePlace = $paginationBlock->count() - 2; // start from 0
 
-        return $paginationBlock->getNode($lastPageNodePlace)->textContent;
+        return (int)$paginationBlock->getNode($lastPageNodePlace)->textContent;
     }
 }

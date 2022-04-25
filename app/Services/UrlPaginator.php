@@ -9,9 +9,13 @@ class UrlPaginator
 {
     private int $currentPage;
 
-    public function __construct(private UriInterface|Uri $basePsrUri, private ?int $lastPage = null, private string $pageQueryParam = 'page')
-    {
-        $this->setCurrentPage(1);
+    public function __construct(
+        private UriInterface|Uri $basePsrUri,
+        private ?int $lastPage = null,
+        private string $pageQueryParam = 'page',
+        int $startPage = 1
+    ) {
+        $this->setCurrentPage($startPage);
     }
 
     public function getCurrentUrl(): UriInterface|Uri

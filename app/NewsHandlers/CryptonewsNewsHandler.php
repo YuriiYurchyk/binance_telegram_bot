@@ -30,42 +30,54 @@ class CryptonewsNewsHandler
         $newsPsrUrl = new Uri($newsUrl);
         $this->basePsrUri = new Uri($url);
 
+        $lastPage = 1;
+        $this->urlPaginator = new UrlPaginator(
+            basePsrUri: $newsPsrUrl,
+            lastPage: $lastPage,
+        );
+
         $this->newsListParser = new CryptonewsNewsListParser();
         $this->newsNodeParser = new CryptonewsNewsListNewsItemParser(clone $this->basePsrUri);
-
-        $lastPage = 1;
-        $this->urlPaginator = new UrlPaginator(basePsrUri: $newsPsrUrl, lastPage: $lastPage);
     }
 
     public function handle()
     {
-        Log::info('Start handle Cryptonews News');
-        $this->begin();
-        Log::info('End handle Cryptonews News');
+        Log::channel('Start handle Cryptonews.net');
+        $this->handlePages();
+        Log::info('End handle Cryptonews.net');
 
         return 0;
     }
 
-    private function begin()
+    private function handlePages(): void
     {
         while (true) {
-            $html = $this->getHtml($this->urlPaginator);
-            $crawler = new Crawler($html);
-            $this->newsListParser->setCrawler($crawler);
-
-            $newsNodes = $this->newsListParser->getNewsNodes();
-            $this->handleNewsNodes($newsNodes);
-
-            // set last page number
-            if (null === $this->urlPaginator->getLastPage()) {
-                $lastPage = $this->newsListParser->getLastPage();
-                $this->urlPaginator->setLastPage($lastPage);
-            }
+            $this->handlePage();
+            Log::info("Parse Cryptonews.net page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
 
             if ($this->urlPaginator->isLast()) {
                 break;
             }
+
+            sleep(2);
             $this->urlPaginator->incrementPage();
+        }
+    }
+
+    private function handlePage(): void
+    {
+        $html = $this->getHtml($this->urlPaginator);
+
+        $crawler = new Crawler($html);
+        $this->newsListParser->setCrawler($crawler);
+
+        $newsNodes = $this->newsListParser->getNewsNodes();
+        $this->handleNewsNodes($newsNodes);
+
+        // set last page number
+        if (null === $this->urlPaginator->getLastPage()) {
+            $lastPage = $this->newsListParser->getLastPage();
+            $this->urlPaginator->setLastPage($lastPage);
         }
     }
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class ParsedNews extends Model
 {
@@ -19,7 +20,7 @@ class ParsedNews extends Model
         'published_date' => 'datetime',
     ];
 
-    public static function scopeIsNew($q)
+    public static function scopeIsNew(Builder $q): Builder
     {
         return $q->where('is_new', 1);
     }

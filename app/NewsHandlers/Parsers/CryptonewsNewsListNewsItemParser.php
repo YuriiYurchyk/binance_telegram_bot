@@ -17,7 +17,7 @@ class CryptonewsNewsListNewsItemParser
         //
     }
 
-    public function setCrawler(DOMElement $node)
+    public function setCrawler(DOMElement $node): void
     {
         $this->crawler = new Crawler($node);
     }
