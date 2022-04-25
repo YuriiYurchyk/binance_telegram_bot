@@ -52,7 +52,7 @@ class NewsTelegramNotifier extends Command
             return;
         }
 
-        $needNotify = 15 < $newParsedNews->count();
+        $needNotify = 15 > $newParsedNews->count();
 
         $messages = $this->prepareParsedNewsForSend($newParsedNews);
         if ($needNotify) {
