@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\NewsHandlers\BinanceNewsHandler;
+use Artisan;
 
 class NewsBinanceParserCommand extends Command
 {
@@ -15,6 +16,8 @@ class NewsBinanceParserCommand extends Command
     {
         $parser = app(BinanceNewsHandler::class);
         $parser->handle();
+
+        Artisan::call('telegram-bot:notify');
 
         return 0;
     }
