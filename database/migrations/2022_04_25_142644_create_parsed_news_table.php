@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -13,12 +12,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('binance_news', function (Blueprint $table) {
+        Schema::create('parsed_news', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique();
             $table->string('title');
+            $table->string('url')->unique();
+            $table->string('site_about');
+            $table->string('site_source');
+            $table->timestamp('published_date')->nullable();
             $table->boolean('is_new');
-            $table->timestamp('release_date')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable()->useCurrentOnUpdate();
         });
@@ -31,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('binance_news');
+        Schema::dropIfExists('parsed_news');
     }
 };

@@ -1,8 +1,11 @@
 {
     "name": "laravel/laravel",
     "type": "project",
-    "description": "Binance Telegram Bot",
-    "keywords": ["framework", "laravel"],
+    "description": "Binance Project",
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
@@ -10,7 +13,9 @@
         "guzzlehttp/guzzle": "^7.2",
         "irazasyed/telegram-bot-sdk": "^3.6",
         "jaggedsoft/php-binance-api": "@dev",
-        "laravel/framework": "^9.2"
+        "laravel/framework": "^9.2",
+        "symfony/dom-crawler": "^6.0",
+        "ext-dom": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

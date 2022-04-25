@@ -24,8 +24,8 @@ return new class extends Migration
                 $table->string('datetime')->nullable();
                 $table->longText('context')->nullable();
                 $table->text('extra')->nullable();
-                $table->timestamp('created_at', 0)->nullable();
-                $table->timestamp('updated_at', 0)->nullable()->useCurrentOnUpdate();
+                $table->timestamp('created_at')->nullable();
+                $table->timestamp('updated_at')->nullable()->useCurrentOnUpdate();
             });
         }
     }
