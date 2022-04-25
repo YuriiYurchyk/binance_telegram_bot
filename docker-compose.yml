@@ -22,7 +22,7 @@ services:
       - mysql
 
   mysql:
-    image: mysql:8
+    image: mariadb:10.5.12
     volumes:
       - ./docker/storage/mysql:/var/lib/mysql
     ports:
