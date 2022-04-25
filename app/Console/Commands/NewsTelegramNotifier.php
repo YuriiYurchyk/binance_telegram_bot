@@ -48,6 +48,10 @@ class NewsTelegramNotifier extends Command
           });
 
         $newParsedNews = $q->get();
+        if ($newParsedNews->isEmpty()) {
+            return;
+        }
+
         $needNotify = 15 > $newParsedNews->count();
 
         $messages = $this->prepareParsedNewsForSend($newParsedNews);
