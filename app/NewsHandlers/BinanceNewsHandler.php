@@ -52,6 +52,10 @@ class BinanceNewsHandler
             if ($this->urlPaginator->isLast()) {
                 break;
             }
+
+            if (1 < $this->urlPaginator->getLastPage()) {
+                sleep(2);
+            }
             $this->urlPaginator->incrementPage();
         }
     }

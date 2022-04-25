@@ -59,7 +59,9 @@ class CryptonewsNewsHandler
                 break;
             }
 
-            sleep(2);
+            if (1 < $this->urlPaginator->getLastPage()) {
+                sleep(2);
+            }
             $this->urlPaginator->incrementPage();
         }
     }
