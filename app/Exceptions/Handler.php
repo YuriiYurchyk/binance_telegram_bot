@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 use Telegram\Bot\Api;
+use App;
 
 class Handler extends ExceptionHandler
 {
@@ -36,10 +37,12 @@ class Handler extends ExceptionHandler
     public function register()
     {
         $this->reportable(function (Throwable $e) {
+            if (!App::environment('production')) {
+                return;
+            }
+
             $telegram = app(Api::class);
-
             $ex = (string) $e;
-
             $messages = mb_str_split($ex, 1000);
 
             foreach ($messages as $message) {
