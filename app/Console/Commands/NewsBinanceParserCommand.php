@@ -19,6 +19,13 @@ class NewsBinanceParserCommand extends Command
 
         Artisan::call('telegram-bot:notify');
 
+
+        sleep(30);
+        $parser = app(BinanceNewsHandler::class);
+        $parser->handle();
+
+        Artisan::call('telegram-bot:notify');
+
         return 0;
     }
 }
