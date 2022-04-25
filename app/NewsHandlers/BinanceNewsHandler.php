@@ -1,53 +1,42 @@
 <?php declare(strict_types=1);
 
-namespace App\Console\Commands;
+namespace App\NewsHandlers;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use Arr;
-use Log;
-use Artisan;
-use App\Models\ParsedNews;
 use GuzzleHttp\Psr7\Uri;
-use App\Parsers\BinanceNewsItemParser;
-use GuzzleHttp\Client;
 use Psr\Http\Message\UriInterface;
 use App\Services\UrlPaginator;
+use GuzzleHttp\Client;
+use Arr;
+use Log;
+use App\Models\ParsedNews;
+use App\NewsHandlers\Parsers\BinanceNewsItemParser;
 
-class BinanceNewsParserCommand extends Command
+class BinanceNewsHandler
 {
-    protected $signature = 'parser-news:binance';
-
-    protected $description = 'Command description';
-
     private Uri|UriInterface $basePsrUri;
 
-    private Uri|UriInterface $newsPsrUrl;
-    private UrlPaginator     $urlPaginator;
+    private UrlPaginator $urlPaginator;
 
     public function __construct(private Client $httpClient)
     {
-        parent::__construct();
-
         $url = "https://www.binance.com/";
         $newsUrl =
             "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=20";
 
-        $this->newsPsrUrl = new Uri($newsUrl);
+        $newsPsrUrl = new Uri($newsUrl);
         $this->basePsrUri = new Uri($url);
 
         $lastPage = 1;
-        $this->urlPaginator = new UrlPaginator(basePsrUri: $this->newsPsrUrl, lastPage: $lastPage, pageQueryParam: 'pageNo');
+        $this->urlPaginator = new UrlPaginator(
+            basePsrUri: $newsPsrUrl,
+            lastPage: $lastPage,
+            pageQueryParam: 'pageNo'
+        );
     }
 
     public function handle()
     {
-        // BinanceNews::truncate();
-
         $this->begin();
-        //        Artisan::call(command: 'telegram:notify');
-
-        //        sleep(30);
 
         return 0;
     }
@@ -55,22 +44,26 @@ class BinanceNewsParserCommand extends Command
     private function begin()
     {
         Log::info('Start handle Binance Crypto News');
-        $this->loadFromBinance();
+        $this->loadNews();
         Log::info('End handle Binance Crypto News');
+
+        return 0;
     }
 
-    private function loadFromBinance()
+    private function loadNews(): void
     {
-        $response = Http::withHeaders([
-            'accept' => '*/*',
-            'accept-language' => 'uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6',
-            'cache-control' => 'no-cache',
-            'content-type' => 'application/json',
-            'lang' => 'en',
-            'pragma' => 'no-cache',
-        ])->get((string) $this->urlPaginator->getCurrentUrl());
+        $response = $this->httpClient->get($this->urlPaginator->getCurrentUrl(), [
+            'headers' => [
+                'accept' => '*/*',
+                'accept-language' => 'uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7,ru;q=0.6',
+                'cache-control' => 'no-cache',
+                'content-type' => 'application/json',
+                'lang' => 'en',
+                'pragma' => 'no-cache',
+            ],
+        ]);
 
-        $newsData = json_decode($response->body(), true);
+        $newsData = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
         $catalogs = Arr::get($newsData, 'data.catalogs');
 
         $catalogs = collect($catalogs);
@@ -96,5 +89,4 @@ class BinanceNewsParserCommand extends Command
             $parsedNews->save();
         }
     }
-
 }

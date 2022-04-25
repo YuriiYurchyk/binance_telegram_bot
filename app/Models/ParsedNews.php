@@ -1,9 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class ParsedNews extends Model
 {
@@ -28,10 +27,10 @@ class ParsedNews extends Model
     public function getForTelegram(): string
     {
         $blocks = [
-            "<b>$this->release_date</b>",
+            "<b>$this->published_date</b>",
             $this->title,
-            "Source: <a href=\"$this->site_source\">$this->site_source</a> ",
             "About: <a href=\"$this->site_about\">$this->site_about</a> ",
+            "Source: <a href=\"$this->site_source\">$this->site_source</a> ",
             "<a href=\"$this->url\">Read Full Version</a>",
         ];
 

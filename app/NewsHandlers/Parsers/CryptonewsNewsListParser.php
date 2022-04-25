@@ -1,6 +1,6 @@
-<?php
+<?php declare(strict_types=1);
 
-namespace App\Parsers;
+namespace App\NewsHandlers\Parsers;
 
 use Symfony\Component\DomCrawler\Crawler;
 use DOMElement;

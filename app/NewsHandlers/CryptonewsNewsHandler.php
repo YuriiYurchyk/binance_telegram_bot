@@ -1,23 +1,19 @@
 <?php declare(strict_types=1);
 
-namespace App\Console\Commands;
+namespace App\NewsHandlers;
 
-use Illuminate\Console\Command;
-use GuzzleHttp\Client;
-use App\Services\UrlPaginator;
-use Symfony\Component\DomCrawler\Crawler;
-use App\Parsers\CryptonewsNewsListParser;
-use App\Parsers\CryptonewsNewsListNewsItemParser;
 use GuzzleHttp\Psr7\Uri;
-use App\Models\ParsedNews;
 use Psr\Http\Message\UriInterface;
+use App\Services\UrlPaginator;
+use GuzzleHttp\Client;
+use Symfony\Component\DomCrawler\Crawler;
+use App\Models\ParsedNews;
+use Log;
+use App\NewsHandlers\Parsers\CryptonewsNewsListParser;
+use App\NewsHandlers\Parsers\CryptonewsNewsListNewsItemParser;
 
-class CryptonewsParseCommand extends Command
+class CryptonewsNewsHandler
 {
-    protected $signature = 'parser-news:cryptonews';
-
-    protected $description = 'Command description';
-
     private Uri|UriInterface $basePsrUri;
 
     private CryptonewsNewsListParser $newsListParser;
@@ -28,8 +24,6 @@ class CryptonewsParseCommand extends Command
 
     public function __construct(private Client $httpClient)
     {
-        parent::__construct();
-
         $url = "https://cryptonews.net/";
         $newsUrl = "https://cryptonews.net/news/market/";
 
@@ -44,6 +38,15 @@ class CryptonewsParseCommand extends Command
     }
 
     public function handle()
+    {
+        Log::info('Start handle Cryptonews News');
+        $this->begin();
+        Log::info('End handle Cryptonews News');
+
+        return 0;
+    }
+
+    private function begin()
     {
         while (true) {
             $html = $this->getHtml($this->urlPaginator);
@@ -64,8 +67,6 @@ class CryptonewsParseCommand extends Command
             }
             $this->urlPaginator->incrementPage();
         }
-
-        return 0;
     }
 
     private function handleNewsNodes(Crawler $newsNodes): void

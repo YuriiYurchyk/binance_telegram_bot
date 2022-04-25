@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Parsers;
+namespace App\NewsHandlers\Parsers;
 
 use Carbon\Carbon;
 use Psr\Http\Message\UriInterface;

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Console\Commands;
 
@@ -7,7 +7,7 @@ use Telegram\Bot\Api;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\ParsedNews;
 
-class TelegramNotifier extends Command
+class NewsTelegramNotifier extends Command
 {
     protected $signature = 'telegram:notify';
 
@@ -23,18 +23,20 @@ class TelegramNotifier extends Command
      */
     public function handle()
     {
-        if (ParsedNews::scopeIsNew(ParsedNews::query())->exists()) {
-            $this->notifyAboutNewTradePair();
-        }
+        $this->notifyAboutNewNews();
 
         return 0;
     }
 
-    private function notifyAboutNewTradePair()
+    private function notifyAboutNewNews()
     {
         /** @var ParsedNews[]|Collection $newParsedNews */
         $newParsedNews = ParsedNews::scopeIsNew(ParsedNews::query())
-                                     ->orderBy('release_date')->get();
+                                   ->orderBy('published_date')->get();
+
+
+        // todo повідомляти лише про новини про binance і які містять певні слова
+
 
         $messages = $this->prepareParsedNewsForSend($newParsedNews);
         foreach ($messages as $messageBlock) {

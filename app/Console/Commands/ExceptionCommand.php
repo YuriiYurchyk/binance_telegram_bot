@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Binance\API;
-use Artisan;
 
 class ExceptionCommand extends Command
 {
