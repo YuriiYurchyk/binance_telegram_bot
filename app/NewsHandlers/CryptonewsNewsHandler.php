@@ -44,7 +44,6 @@ class CryptonewsNewsHandler
     {
         Log::info('Start handle Cryptonews.net');
         $this->handlePages();
-        Log::info('End handle Cryptonews.net');
 
         return 0;
     }
@@ -53,7 +52,7 @@ class CryptonewsNewsHandler
     {
         while (true) {
             $this->handlePage();
-            Log::info("Parse Cryptonews.net page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
+//            Log::info("Parse Cryptonews.net page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
 
             if ($this->urlPaginator->isLast()) {
                 break;

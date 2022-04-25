@@ -38,7 +38,6 @@ class BinanceNewsHandler
     {
         Log::info('Start handle Binance.com News');
         $this->handlePages();
-        Log::info('End handle Binance.com News');
 
         return 0;
     }
@@ -47,7 +46,7 @@ class BinanceNewsHandler
     {
         while (true) {
             $this->handlePage();
-            Log::info("Parse Binance.com page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
+//            Log::info("Parse Binance.com page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
 
             if ($this->urlPaginator->isLast()) {
                 break;
