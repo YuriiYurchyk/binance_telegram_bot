@@ -7,7 +7,7 @@ use App\NewsHandlers\BinanceNewsHandler;
 
 class NewsBinanceParserCommand extends Command
 {
-    protected $signature = 'parse:news';
+    protected $signature = 'parser-news:binance';
 
     protected $description = 'Command description';
 
