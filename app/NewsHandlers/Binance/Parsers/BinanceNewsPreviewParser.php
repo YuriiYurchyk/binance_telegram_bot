@@ -1,16 +1,25 @@
 <?php declare(strict_types=1);
 
-namespace App\NewsHandlers\Parsers;
+namespace App\NewsHandlers\Binance\Parsers;
 
 use Carbon\Carbon;
 use Psr\Http\Message\UriInterface;
 use GuzzleHttp\Psr7\Uri;
+use App\NewsHandlers\Interfaces\Parsers\ArticlePreviewParserInterface;
+use DOMElement;
 
-class BinanceNewsItemParser
+class BinanceNewsPreviewParser implements ArticlePreviewParserInterface
 {
-    public function __construct(private array $article, private UriInterface|Uri $baseUri)
+    private array $article;
+
+    public function __construct(private UriInterface|Uri $baseUri)
     {
         //
+    }
+
+    public function setSource(DOMElement|array $article): void
+    {
+        $this->article = $article;
     }
 
     public function getTitle(): string

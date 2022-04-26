@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\NewsHandlers\CryptonewsNewsHandler;
+use App\NewsHandlers\Cryptonews\CryptonewsNewsHandler;
 use Artisan;
 
 class NewsCryptonewsParseCommand extends Command

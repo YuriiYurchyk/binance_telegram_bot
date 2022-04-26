@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace App\NewsHandlers\Parsers;
+namespace App\NewsHandlers\Cryptonews\Parsers;
 
+use App\NewsHandlers\Interfaces\Parsers\ArticleListParserInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use DOMElement;
 
-class CryptonewsNewsListParser
+class CryptonewsNewsListParser implements ArticleListParserInterface
 {
     private Crawler $crawler;
 
-    public function setCrawler(Crawler $crawler): void
+    public function setNewsSourceData(Crawler|array $crawler): void
     {
         $this->crawler = $crawler;
     }
@@ -17,7 +18,7 @@ class CryptonewsNewsListParser
     /**
      * @return Crawler|DOMElement[]
      */
-    public function getNewsNodes(): Crawler
+    public function getNews(): Crawler
     {
         $newsNodes = $this->crawler->filter('section > div.news-item');
 
