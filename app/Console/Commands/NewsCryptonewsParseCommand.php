@@ -14,7 +14,9 @@ class NewsCryptonewsParseCommand extends Command
 
     public function handle()
     {
-        $parser = app(CryptonewsNewsHandler::class);
+        $lastPage = 1;
+
+        $parser = app(CryptonewsNewsHandler::class, ['lastPage' => $lastPage]);
         $parser->handle();
         Artisan::call('telegram-bot:notify');
 

@@ -14,13 +14,15 @@ class NewsBinanceParserCommand extends Command
 
     public function handle()
     {
-        $parser = app(BinanceNewsHandler::class);
+        $lastPage = 1;
+
+        $parser = app(BinanceNewsHandler::class, ['lastPage' => $lastPage]);
+
         $parser->handle();
         Artisan::call('telegram-bot:notify');
 
         sleep(30);
 
-        $parser = app(BinanceNewsHandler::class);
         $parser->handle();
         Artisan::call('telegram-bot:notify');
 

@@ -15,8 +15,9 @@ class BinanceNewsHandler extends BaseNewsHandler
     private BinanceNewsPreviewParser $binanceNewsPreviewParser;
 
     public function __construct(
-        private BinanceNewsDownloader $binanceNewsDownloader,
-        private BinanceNewsListParser $binanceNewsListParser,
+        protected int $lastPage,
+        protected BinanceNewsDownloader $binanceNewsDownloader,
+        protected BinanceNewsListParser $binanceNewsListParser,
     ) {
         $url = "https://www.binance.com/";
         $newsUrl =
@@ -25,7 +26,6 @@ class BinanceNewsHandler extends BaseNewsHandler
         $newsPsrUrl = new Uri($newsUrl);
         $this->basePsrUri = new Uri($url);
 
-        $lastPage = 1;
         $this->urlPaginator = new UrlPaginator(
             basePsrUri: $newsPsrUrl,
             lastPage: $lastPage,

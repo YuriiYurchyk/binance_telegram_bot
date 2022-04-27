@@ -18,8 +18,9 @@ class CryptonewsNewsHandler extends BaseNewsHandler
     private CryptonewsNewsPreviewParser $cryptonewsNewsPreviewParser;
 
     public function __construct(
-        private CryptonewsNewsDownloader $cryptonewsNewsDownloader,
-        private CryptonewsNewsListParser $cryptonewsNewsListParser,
+        protected int $lastPage,
+        protected CryptonewsNewsDownloader $cryptonewsNewsDownloader,
+        protected CryptonewsNewsListParser $cryptonewsNewsListParser,
     ) {
         $url = "https://cryptonews.net/";
         $newsUrl = "https://cryptonews.net/news/market/";
@@ -27,7 +28,6 @@ class CryptonewsNewsHandler extends BaseNewsHandler
         $newsPsrUrl = new Uri($newsUrl);
         $this->basePsrUri = new Uri($url);
 
-        $lastPage = 1;
         $this->urlPaginator = new UrlPaginator(
             basePsrUri: $newsPsrUrl,
             lastPage: $lastPage,
