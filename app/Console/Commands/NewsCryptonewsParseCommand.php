@@ -20,6 +20,7 @@ class NewsCryptonewsParseCommand extends Command
         $parser->handle();
         Artisan::call('telegram-bot:notify');
 
+
         return 0;
     }
 }
