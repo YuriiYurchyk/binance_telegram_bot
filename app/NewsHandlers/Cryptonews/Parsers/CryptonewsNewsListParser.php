@@ -2,11 +2,11 @@
 
 namespace App\NewsHandlers\Cryptonews\Parsers;
 
-use App\NewsHandlers\Interfaces\Parsers\ArticleListParserInterface;
+use App\NewsHandlers\Interfaces\Parsers\ArticlesListParserInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use DOMElement;
 
-class CryptonewsNewsListParser implements ArticleListParserInterface
+class CryptonewsNewsListParser implements ArticlesListParserInterface
 {
     private Crawler $crawler;
 

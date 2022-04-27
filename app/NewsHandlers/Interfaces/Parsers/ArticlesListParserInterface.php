@@ -4,7 +4,7 @@ namespace App\NewsHandlers\Interfaces\Parsers;
 
 use Symfony\Component\DomCrawler\Crawler;
 
-interface ArticleListParserInterface
+interface ArticlesListParserInterface
 {
     public function setNewsSourceData(Crawler|array $newsSourceData): void;
 

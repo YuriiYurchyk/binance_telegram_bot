@@ -27,13 +27,15 @@ class UrlPaginator
         return $url;
     }
 
-    public function incrementPage(): void
+    public function incrementPage(): bool
     {
         if ($this->isLast()) {
-            return;
+            return false;
         }
 
         $this->setCurrentPage($this->getCurrentPage() + 1);
+
+        return true;
     }
 
     public function isLast(): bool

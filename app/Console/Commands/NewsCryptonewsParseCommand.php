@@ -16,7 +16,6 @@ class NewsCryptonewsParseCommand extends Command
     {
         $parser = app(CryptonewsNewsHandler::class);
         $parser->handle();
-
         Artisan::call('telegram-bot:notify');
 
         return 0;

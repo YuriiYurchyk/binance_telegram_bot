@@ -5,10 +5,10 @@ namespace App\NewsHandlers\Binance;
 use GuzzleHttp\Psr7\Uri;
 use App\Services\UrlPaginator;
 use App\Models\ParsedNews;
-use App\NewsHandlers\Binance\Parsers\BinanceNewsPreviewParser;
+use App\NewsHandlers\BaseNewsHandler;
 use App\NewsHandlers\Binance\Downloaders\BinanceNewsDownloader;
 use App\NewsHandlers\Binance\Parsers\BinanceNewsListParser;
-use App\NewsHandlers\BaseNewsHandler;
+use App\NewsHandlers\Binance\Parsers\BinanceNewsPreviewParser;
 
 class BinanceNewsHandler extends BaseNewsHandler
 {
@@ -35,7 +35,7 @@ class BinanceNewsHandler extends BaseNewsHandler
         $this->binanceNewsPreviewParser = new BinanceNewsPreviewParser(clone $this->basePsrUri);
     }
 
-    protected function handlePage(): void
+    protected function handleNewsListPage(): void
     {
         $newsData = $this->binanceNewsDownloader->getArticlesList($this->urlPaginator->getCurrentUrl());
 
@@ -43,23 +43,34 @@ class BinanceNewsHandler extends BaseNewsHandler
         $articles = $this->binanceNewsListParser->getNews();
 
         foreach ($articles as $article) {
-            $this->binanceNewsPreviewParser->setSource($article);
-
-            $newsLink = $this->binanceNewsPreviewParser->getNewsUrl();
-            if (ParsedNews::where('url', $newsLink)->exists()) {
-                continue;
-            }
-
-            /** @var ParsedNews $parsedNews */
-            $parsedNews = ParsedNews::make();
-            $parsedNews->title = $this->binanceNewsPreviewParser->getTitle();
-            $parsedNews->url = $this->binanceNewsPreviewParser->getNewsUrl();
-            $parsedNews->site_about = $this->binanceNewsPreviewParser->getSiteAboutCurrentNewsUrl();
-            $parsedNews->site_source = $this->basePsrUri->getHost();
-            $parsedNews->published_date = $this->binanceNewsPreviewParser->getPublishedDate();
-            $parsedNews->is_new = 1;
-            $parsedNews->save();
+            $this->handleNewsListItem($article);
         }
+    }
+
+    protected function handleNewsListItem(array $article): void
+    {
+        $this->binanceNewsPreviewParser->setSource($article);
+
+        $newsUrl = $this->binanceNewsPreviewParser->getNewsUrl();
+        $parsedNewsExists = ParsedNews::where('url', $newsUrl)->exists();
+        if ($parsedNewsExists) {
+            return;
+        }
+
+        $this->createNewsItem();
+    }
+
+    protected function createNewsItem(): void
+    {
+        /** @var ParsedNews $parsedNews */
+        $parsedNews = ParsedNews::make();
+        $parsedNews->title = $this->binanceNewsPreviewParser->getTitle();
+        $parsedNews->url = $this->binanceNewsPreviewParser->getNewsUrl();
+        $parsedNews->site_about = $this->binanceNewsPreviewParser->getSiteAboutCurrentNewsUrl();
+        $parsedNews->site_source = $this->basePsrUri->getHost();
+        $parsedNews->published_date = $this->binanceNewsPreviewParser->getPublishedDate();
+        $parsedNews->is_new = 1;
+        $parsedNews->save();
     }
 
 }

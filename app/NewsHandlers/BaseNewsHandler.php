@@ -17,23 +17,18 @@ abstract class BaseNewsHandler
     {
         Log::info('Start handle ' . static::class);
 
-        while (true) {
-            $this->handlePage();
+        do {
+            $this->handleNewsListPage();
             //            Log::info(static::class
             //                . " parse page: {$this->urlPaginator->getCurrentPage()}/{$this->urlPaginator->getLastPage()}");
 
-            if ($this->urlPaginator->isLast()) {
-                break;
-            }
             if (1 < $this->urlPaginator->getLastPage()) {
                 sleep(2);
             }
-
-            $this->urlPaginator->incrementPage();
-        }
+        } while ($this->urlPaginator->incrementPage());
 
         return 0;
     }
 
-    abstract protected function handlePage(): void;
+    abstract protected function handleNewsListPage(): void;
 }

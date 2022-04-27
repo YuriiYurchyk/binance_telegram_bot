@@ -2,11 +2,11 @@
 
 namespace App\NewsHandlers\Binance\Parsers;
 
-use App\NewsHandlers\Interfaces\Parsers\ArticleListParserInterface;
+use App\NewsHandlers\Interfaces\Parsers\ArticlesListParserInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Arr;
 
-class BinanceNewsListParser implements ArticleListParserInterface
+class BinanceNewsListParser implements ArticlesListParserInterface
 {
     private array $newsApiData;
 

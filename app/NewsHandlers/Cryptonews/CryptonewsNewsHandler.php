@@ -4,13 +4,14 @@ namespace App\NewsHandlers\Cryptonews;
 
 use GuzzleHttp\Psr7\Uri;
 use App\Services\UrlPaginator;
-use Symfony\Component\DomCrawler\Crawler;
 use App\Models\ParsedNews;
+use App\NewsHandlers\BaseNewsHandler;
+use App\NewsHandlers\Cryptonews\Downloaders\CryptonewsNewsDownloader;
 use App\NewsHandlers\Cryptonews\Parsers\CryptonewsNewsListParser;
 use App\NewsHandlers\Cryptonews\Parsers\CryptonewsNewsPreviewParser;
-use App\NewsHandlers\Cryptonews\Downloaders\CryptonewsNewsDownloader;
-use App\NewsHandlers\BaseNewsHandler;
+use Symfony\Component\DomCrawler\Crawler;
 use DOMElement;
+use Carbon\Carbon;
 
 class CryptonewsNewsHandler extends BaseNewsHandler
 {
@@ -35,7 +36,7 @@ class CryptonewsNewsHandler extends BaseNewsHandler
         $this->cryptonewsNewsPreviewParser = new CryptonewsNewsPreviewParser(clone $this->basePsrUri);
     }
 
-    protected function handlePage(): void
+    protected function handleNewsListPage(): void
     {
         $html = $this->cryptonewsNewsDownloader->getArticlesList($this->urlPaginator->getCurrentUrl());
 
@@ -43,7 +44,9 @@ class CryptonewsNewsHandler extends BaseNewsHandler
         $this->cryptonewsNewsListParser->setNewsSourceData($crawler);
 
         $newsNodes = $this->cryptonewsNewsListParser->getNews();
-        $this->handleNewsNodes($newsNodes);
+        foreach ($newsNodes as $newsNode) {
+            $this->handleNewsListItem($newsNode);
+        }
 
         // set last page number
         if (null === $this->urlPaginator->getLastPage()) {
@@ -52,39 +55,46 @@ class CryptonewsNewsHandler extends BaseNewsHandler
         }
     }
 
-    /**
-     * @param  Crawler|DOMElement[]  $newsNodes
-     *
-     * @return void
-     */
-    private function handleNewsNodes(Crawler $newsNodes): void
+    protected function handleNewsListItem(DOMElement $newsNode): void
     {
-        foreach ($newsNodes as $newsNode) {
-            $this->cryptonewsNewsPreviewParser->setSource($newsNode);
-            $newsUrl = $this->cryptonewsNewsPreviewParser->getNewsUrl();
+        $this->cryptonewsNewsPreviewParser->setSource($newsNode);
 
-            $parsedNews = ParsedNews::where('url', $newsUrl)->first();
-            if ($parsedNews
-                && empty($parsedNews->published_date)
-                && !empty($this->cryptonewsNewsPreviewParser->getPublishedDate())
-            ) {
-                $parsedNews->published_date = $this->cryptonewsNewsPreviewParser->getPublishedDate();
-                $parsedNews->save();
-            }
+        $newsUrl = $this->cryptonewsNewsPreviewParser->getNewsUrl();
+        $parsedNews = ParsedNews::where('url', $newsUrl)->first();
+        if ($parsedNews) {
+            $this->addNewsPublishedDateIfEmpty($parsedNews);
 
-            if (!empty($parsedNews)) {
-                continue;
-            }
-
-            /** @var ParsedNews $parsedNews */
-            $parsedNews = ParsedNews::make();
-            $parsedNews->title = $this->cryptonewsNewsPreviewParser->getTitle();
-            $parsedNews->url = $newsUrl;
-            $parsedNews->site_about = $this->cryptonewsNewsPreviewParser->getSiteAboutCurrentNewsUrl();
-            $parsedNews->site_source = $this->basePsrUri->getHost();
-            $parsedNews->published_date = $this->cryptonewsNewsPreviewParser->getPublishedDate();
-            $parsedNews->is_new = 1;
-            $parsedNews->save();
+            return;
         }
+
+        $this->createNewsItem();
+    }
+
+    protected function createNewsItem(): void
+    {
+        /** @var ParsedNews $parsedNews */
+        $parsedNews = ParsedNews::make();
+        $parsedNews->title = $this->cryptonewsNewsPreviewParser->getTitle();
+        $parsedNews->url = $this->cryptonewsNewsPreviewParser->getNewsUrl();
+        $parsedNews->site_about = $this->cryptonewsNewsPreviewParser->getSiteAboutCurrentNewsUrl();
+        $parsedNews->site_source = $this->basePsrUri->getHost();
+        $parsedNews->published_date = $this->cryptonewsNewsPreviewParser->getPublishedDate();
+        $parsedNews->is_new = 1;
+        $parsedNews->save();
+    }
+
+    protected function addNewsPublishedDateIfEmpty(ParsedNews $parsedNews): void
+    {
+        if ($parsedNews->published_date) {
+            return;
+        }
+
+        $publishedDate = $this->cryptonewsNewsPreviewParser->getPublishedDate();
+        if (!($publishedDate instanceof Carbon)) {
+            return;
+        }
+
+        $parsedNews->published_date = $publishedDate;
+        $parsedNews->save();
     }
 }
