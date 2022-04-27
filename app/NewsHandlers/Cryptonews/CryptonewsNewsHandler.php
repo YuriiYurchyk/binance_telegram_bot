@@ -10,6 +10,7 @@ use App\NewsHandlers\Cryptonews\Parsers\CryptonewsNewsListParser;
 use App\NewsHandlers\Cryptonews\Parsers\CryptonewsNewsPreviewParser;
 use App\NewsHandlers\Cryptonews\Downloaders\CryptonewsNewsDownloader;
 use App\NewsHandlers\BaseNewsHandler;
+use DOMElement;
 
 class CryptonewsNewsHandler extends BaseNewsHandler
 {
@@ -51,6 +52,11 @@ class CryptonewsNewsHandler extends BaseNewsHandler
         }
     }
 
+    /**
+     * @param  Crawler|DOMElement[]  $newsNodes
+     *
+     * @return void
+     */
     private function handleNewsNodes(Crawler $newsNodes): void
     {
         foreach ($newsNodes as $newsNode) {
@@ -70,16 +76,13 @@ class CryptonewsNewsHandler extends BaseNewsHandler
                 continue;
             }
 
-            $publishedDate = $this->cryptonewsNewsPreviewParser->getPublishedDate()
-                                                               ?->setTimezone(config('app.timezone'));
-
             /** @var ParsedNews $parsedNews */
             $parsedNews = ParsedNews::make();
             $parsedNews->title = $this->cryptonewsNewsPreviewParser->getTitle();
             $parsedNews->url = $newsUrl;
             $parsedNews->site_about = $this->cryptonewsNewsPreviewParser->getSiteAboutCurrentNewsUrl();
             $parsedNews->site_source = $this->basePsrUri->getHost();
-            $parsedNews->published_date = $publishedDate;
+            $parsedNews->published_date = $this->cryptonewsNewsPreviewParser->getPublishedDate();
             $parsedNews->is_new = 1;
             $parsedNews->save();
         }

@@ -15,13 +15,16 @@ class BinanceNewsListParser implements ArticleListParserInterface
         $this->newsApiData = $newsSourceData;
     }
 
+    /**
+     * @return array[]
+     */
     public function getNews(): array
     {
         $catalogs = Arr::get($this->newsApiData, 'data.catalogs');
 
         $catalogs = collect($catalogs);
-        $newCryptoNewsCcatalog = $catalogs->where('catalogId', 48)->first();
-        $articles = $newCryptoNewsCcatalog['articles'];
+        $newCryptoNewsCatalog = $catalogs->where('catalogId', 48)->first();
+        $articles = $newCryptoNewsCatalog['articles'];
 
         return $articles;
     }

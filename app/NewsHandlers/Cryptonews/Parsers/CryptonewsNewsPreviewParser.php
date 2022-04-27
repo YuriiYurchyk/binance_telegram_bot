@@ -49,7 +49,7 @@ class CryptonewsNewsPreviewParser implements ArticlePreviewParserInterface
             $dateTime = null;
         }
 
-        return $dateTime;
+        return $dateTime?->setTimezone(config('app.timezone'));
     }
 
     public function getSiteAboutCurrentNewsUrl(): UriInterface|Uri
