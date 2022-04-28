@@ -7,6 +7,7 @@ use Telegram\Bot\Api;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\ParsedNews;
 use Illuminate\Database\Eloquent\Builder;
+use GuzzleHttp\Client;
 
 class NewsTelegramNotifier extends Command
 {
@@ -55,13 +56,26 @@ class NewsTelegramNotifier extends Command
         $needNotify = 15 > $newParsedNews->count();
 
         $messages = $this->prepareParsedNewsForSend($newParsedNews);
+
+
+        $needCall = false;
         if ($needNotify) {
             foreach ($messages as $messageBlock) {
-                $message = implode(PHP_EOL . PHP_EOL, $messageBlock);
-                $this->sendTgMessages($message);
+                $msg = implode(PHP_EOL . PHP_EOL, $messageBlock);
+                $this->sendTgMessages($msg);
+
+                $needCall = $needCall ?: false !== mb_stripos($msg, 'usdt');
+                $needCall = $needCall ?: false !== mb_stripos($msg, 'busd');
             }
         }
+
         $this->markParsedNewsAsOld($newParsedNews);
+
+        if ($needCall) {
+            $client = new Client();
+            $client->get('http://api.callmebot.com/start.php?user=@YuriiYurchyk&text=This+is+a+robot&lang=en-GB-Standard-B&rpt=2');
+        }
+
 
         if ($needNotify) {
             // щоб привернути увагу
