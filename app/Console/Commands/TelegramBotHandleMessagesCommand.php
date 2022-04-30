@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Telegram;
 
-class TelegramBotHandleMessages extends Command
+class TelegramBotHandleMessagesCommand extends Command
 {
     protected $signature = 'telegram-bot:handle-messages';
 

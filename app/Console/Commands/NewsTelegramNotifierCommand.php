@@ -9,7 +9,7 @@ use App\Models\ParsedNews;
 use Illuminate\Database\Eloquent\Builder;
 use GuzzleHttp\Client;
 
-class NewsTelegramNotifier extends Command
+class NewsTelegramNotifierCommand extends Command
 {
     protected $signature = 'telegram-bot:notify';
 
