@@ -16,7 +16,8 @@
         "irazasyed/telegram-bot-sdk": "^3.6",
         "jaggedsoft/php-binance-api": "@dev",
         "laravel/framework": "^9.2",
-        "symfony/dom-crawler": "^5.0"
+        "symfony/dom-crawler": "^5.0",
+        "ext-zip": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

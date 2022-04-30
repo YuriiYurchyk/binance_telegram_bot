@@ -37,7 +37,12 @@ class TradingPair extends Model
             'parsed_news_trading_pair',
             'trading_pair_id',
             'parsed_news_id',
-        )->where('published_date', '>', (string)now()->startOfYear()->setYear(2020));
+        )->where('published_date', '>', (string) now()->startOfYear()->setYear(2020));
+    }
+
+    public function binanceSpotHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BinanceSpotHistory::class, 'trading_pair_id', 'id');
     }
 
     public function scopeActive($q)
@@ -49,6 +54,12 @@ class TradingPair extends Model
     {
         return $this->baseCoin->name . '/' . $this->quoteCoin->name;
     }
+
+    public function getTradingSpotPairCode(): string
+    {
+        return $this->baseCoin->name . $this->quoteCoin->name;
+    }
+
 
 
 }
