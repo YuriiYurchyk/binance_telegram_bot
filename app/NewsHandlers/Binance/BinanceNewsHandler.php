@@ -15,7 +15,7 @@ class BinanceNewsHandler extends BaseNewsHandler
     private BinanceNewsPreviewParser $binanceNewsPreviewParser;
 
     public function __construct(
-        protected int $lastPage,
+        protected ?int $lastPage,
         protected BinanceNewsDownloader $binanceNewsDownloader,
         protected BinanceNewsListParser $binanceNewsListParser,
     ) {

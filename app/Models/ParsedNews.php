@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class ParsedNews extends Model
 {
@@ -38,4 +39,42 @@ class ParsedNews extends Model
         return implode(PHP_EOL, $blocks);
     }
 
+    public function parsedNews()
+    {
+        return $this->belongsToMany(
+            TradingPair::class,
+            'parsed_news_trading_pair',
+            'parsed_news_id',
+            'trading_pair_id',
+        );
+    }
+
+    /**
+     * @return ParsedNews[]|Collection
+     */
+    public static function getBinanceTradingPairsNews(): Collection
+    {
+        $q = self::query();
+        $q = $q->orderByDesc('published_date');
+
+        $q->where('site_about', 'like', '%binance.com%')
+          ->where(function (Builder $q) {
+              $q->where('title', 'like', '%Adds%');
+              $q->orWhere('title', 'like', '%adds%');
+          })
+          ->where(function (Builder $q) {
+              $q->where('title', 'like', '%Trading%');
+              $q->orWhere('title', 'like', '%trading%');
+          });
+
+        return $q->get();
+    }
+
+    public function getTradingPairsFromTitle(): array
+    {
+        preg_match_all(pattern: '|[a-zA-Z]{1,30}?/[A-Z]{1,30}|', subject: $this->title, matches: $matches);
+        $matches = array_shift($matches);
+
+        return $matches;
+    }
 }

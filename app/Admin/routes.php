@@ -13,4 +13,5 @@ Route::group([
 
     $router->get('/', 'HomeController@index')->name('home');
 
+    $router->resource('trading-pairs', \App\Admin\Controllers\TradingPairController::class);
 });
