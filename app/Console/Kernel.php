@@ -18,6 +18,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('parser-news:binance')->everyMinute();
         $schedule->command('parser-news:cryptonews')->everyMinute();
+        $schedule->command('binance:update-coin-list')->dailyAt('04:00');
 //        $schedule->command('telegram-bot:handle-messages')->everyMinute();
         //        $schedule->command('bot:run')->everyMinute();
     }
