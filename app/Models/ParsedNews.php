@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Encore\Admin\Traits\DefaultDatetimeFormat;
 
 class ParsedNews extends Model
 {
+    use DefaultDatetimeFormat;
+
     protected $fillable = [
         'title',
         'url',

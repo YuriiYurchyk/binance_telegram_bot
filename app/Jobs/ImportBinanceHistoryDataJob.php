@@ -20,6 +20,7 @@ class ImportBinanceHistoryDataJob implements ShouldQueue
         private string $csvFileName,
         private string $dataRange,
         private int $tradingPairId,
+        private string $fileNameWithoutPath,
     ) {
         $this->importer = new ImporterBinanceHistoryDataFromCsv();
     }
@@ -29,6 +30,6 @@ class ImportBinanceHistoryDataJob implements ShouldQueue
         ini_set("memory_limit", "-1");
         DB::disableQueryLog();
 
-        $this->importer->handle($this->csvFileName, $this->dataRange, $this->tradingPairId);
+        $this->importer->handle($this->csvFileName, $this->dataRange, $this->tradingPairId, $this->fileNameWithoutPath);
     }
 }

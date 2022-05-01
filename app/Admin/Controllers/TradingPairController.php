@@ -34,15 +34,42 @@ class TradingPairController extends Controller
         $grid->column('status', __('Status'));
         $grid->column('base_coin', __('Base coin'))->sortable();
         $grid->column('quote_coin', __('Quote coin'))->sortable();
-        $grid->column('binance_added_at', __('Binance added at'))->editable('datetime');
 
-        $grid->parsedNews()->display(function ($roles) {
-            $roles = array_map(function ($role) {
-                return "<a target='_blank' href=\"{$role['url']}\">{$role['url']}</a>";
-            }, $roles);
+        $grid->parsedNews('News Published At')->display(function (array $news) {
+            $news = array_shift($news);
 
-            return join('&nbsp;', $roles);
+            return $news['published_date'];
         });
+        $grid->column('binance_added_at', __('Binance added at'))->datetime()->sortable();
+
+
+        // точка покупки - 3 хвилина після публікації
+        // друга точка - максимальна ціна в наступні 5 годин
+
+        // додати колонку в пари трейдингу - відсотковий ріст ціни відносно максимуму, дата максимуму, дата покупки, ціна покупки, ціна максимальна
+
+
+        // ще треба врахувати наявність у валюти інших валютних пар і як вони себе вели в момент появи новини
+
+
+
+        // тут достатньо 1 колонки в історії трейдинку, де я проставляю дату покупки і продажу
+
+
+        // краще все перевести в utc і при виводі показувати потрібну дату
+
+
+
+        // todo додати чекбокс, що тут можна виграти щось
+        // ще дізнаватись відповідно до дати які пари є уже в цієї валюти на біржі
+
+        //        $grid->parsedNews()->display(function ($roles) {
+//            $roles = array_map(function ($role) {
+//                return "<a target='_blank' href=\"{$role['url']}\">{$role['url']}</a>";
+//            }, $roles);
+//
+//            return implode('&nbsp;', $roles);
+//        });
 
         $grid->column('created_at', __('Created at'))->hide();
         $grid->column('updated_at', __('Updated at'))->hide();

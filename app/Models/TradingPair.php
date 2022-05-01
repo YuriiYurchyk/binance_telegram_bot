@@ -1,12 +1,14 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Encore\Admin\Traits\DefaultDatetimeFormat;
 
 class TradingPair extends Model
 {
+    use DefaultDatetimeFormat;
     use HasFactory;
 
     protected $fillable = [
@@ -17,7 +19,7 @@ class TradingPair extends Model
     ];
 
     protected $casts = [
-        'binance_added_at' => 'timestamp',
+        'binance_added_at' => 'datetime',
     ];
 
     public function baseCoin(): \Illuminate\Database\Eloquent\Relations\BelongsTo

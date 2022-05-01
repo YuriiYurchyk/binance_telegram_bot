@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class ImporterBinanceHistoryDataFromCsv
 {
-    public function handle($csvFileName, string $dataRange, int $tradingPairId)
+    public function handle($csvFileName, string $dataRange, int $tradingPairId, ?string $fileNameWithoutPath = null)
     {
         $csv = file_get_contents($csvFileName);
 
@@ -22,7 +22,11 @@ class ImporterBinanceHistoryDataFromCsv
 
         $rows = [];
         while ($line = $csvReader->getNextParsedLine()) {
-            $rows[] = array_merge(['data_range' => $dataRange, 'trading_pair_id' => $tradingPairId], $line);
+            $rows[] = array_merge([
+                'data_range' => $dataRange,
+                'trading_pair_id' => $tradingPairId,
+                'source_file_name' => $fileNameWithoutPath,
+            ], $line);
 
             if (1000 === count($rows)) {
                 DB::table('binance_spot_history')->insertOrIgnore($rows);

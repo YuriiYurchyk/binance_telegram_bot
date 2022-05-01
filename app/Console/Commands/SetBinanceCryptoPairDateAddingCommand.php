@@ -14,7 +14,7 @@ class SetBinanceCryptoPairDateAddingCommand extends Command
     public function handle()
     {
         /** @var TradingPair[] $tradePairs */
-        $tradePairs = TradingPair::whereHas('parsedNews')->whereHas('binanceSpotHistory')->get();
+        $tradePairs = TradingPair::whereHas('binanceSpotHistory')->get();
         foreach ($tradePairs as $tradePair) {
             $firstOrderOpenTime = $tradePair->binanceSpotHistory()->orderBy('open_time')->first()->open_time;
 

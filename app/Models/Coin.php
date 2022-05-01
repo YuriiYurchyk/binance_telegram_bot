@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Models;
 
@@ -22,7 +22,7 @@ class Coin extends Model
             relatedPivotKey: 'base_coin',
             parentKey: 'name',
             relatedKey: 'name',
-        )->withTimestamps();
+        )->withTimestamps()->withPivot('status', 'binance_added_at');
     }
 
     public function quoteCoins()

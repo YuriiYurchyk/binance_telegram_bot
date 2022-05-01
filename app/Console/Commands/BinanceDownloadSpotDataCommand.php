@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Console\Commands;
 
@@ -8,6 +8,8 @@ use ZipArchive;
 use App\Models\TradingPair;
 use Cache;
 use App\Jobs\ImportBinanceHistoryDataJob;
+use App\Models\BinanceSpotHistory;
+use App\Models\Coin;
 
 class BinanceDownloadSpotDataCommand extends Command
 {
@@ -20,15 +22,19 @@ class BinanceDownloadSpotDataCommand extends Command
         $startDateI = Carbon::now()->setYear(2017)->setMonth(01);
         $endDate = Carbon::now()->setYear(2022)->setMonth(03)->setDay(01);
 
-        $tradingPairs = TradingPair::whereHas('parsedNews')->get();
+        $tradingPairs = TradingPair::get();
 
         $dataRange = "1m";
 
         foreach ($tradingPairs as $pair) {
             $startDate = clone $startDateI;
+            $monthAmount = 0;
             while ($startDate->lt($endDate)) {
                 $hasStartData = $this->handlePair($startDate, $pair, $dataRange);
                 if ($hasStartData) {
+                    $monthAmount++;
+                }
+                if ($monthAmount === 2) {
                     break;
                 }
 
@@ -46,10 +52,17 @@ class BinanceDownloadSpotDataCommand extends Command
 
         $period = 'monthly';
         $dateFormatted = $startDate->format('Y-m');
-        $csvFileName = base_path("binance-data/$period/$pairName/$pairName-$dataRange-$dateFormatted.csv");
-        if (file_exists($csvFileName)) {
 
-            ImportBinanceHistoryDataJob::dispatch($csvFileName, $dataRange, $tradingPair->id);
+        $onlyFileName = "$pairName-$dataRange-$dateFormatted.csv";
+        $csvFileName = base_path("binance-data/$period/$pairName/$onlyFileName");
+
+        if (BinanceSpotHistory::where('source_file_name', $onlyFileName)->exists()) {
+            return true;
+        }
+
+        if (file_exists($csvFileName)) {
+            ImportBinanceHistoryDataJob::dispatch($csvFileName, $dataRange, $tradingPair->id, $onlyFileName);
+
             return true;
         }
 
@@ -57,17 +70,17 @@ class BinanceDownloadSpotDataCommand extends Command
         $targetPath = base_path("binance-data/$period/$pairName/$fileName");
         $url = "https://data.binance.vision/data/spot/$period/klines/$pairName/$dataRange/$fileName";
 
-        if (404 == Cache::get($url)) {
+        if (404 == (int)Cache::get($url)) {
             return false;
         }
 
-        $this->info($dateFormatted . ' ' . $pairName,);
+        $this->info($dateFormatted . ' ' . $pairName . '  ' . $tradingPair->id,);
 
         try {
             $content = file_get_contents($url);
         } catch (\Exception $e) {
-            if (str_contains($e->getMessage(), 404)) {
-                Cache::put($url, 404);
+            if (str_contains($e->getMessage(), '404')) {
+                Cache::forever($url, 404);
             }
 
             return false;
@@ -90,7 +103,8 @@ class BinanceDownloadSpotDataCommand extends Command
 
         unlink($targetPath);
 
-        ImportBinanceHistoryDataJob::dispatch($csvFileName, $dataRange, $tradingPair->id);
+        ImportBinanceHistoryDataJob::dispatch($csvFileName, $dataRange, $tradingPair->id, $onlyFileName);
+
         return true;
     }
 
