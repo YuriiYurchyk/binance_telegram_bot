@@ -42,7 +42,7 @@ class ParsedNews extends Model
         return implode(PHP_EOL, $blocks);
     }
 
-    public function parsedNews()
+    public function tradingPairs()
     {
         return $this->belongsToMany(
             TradingPair::class,

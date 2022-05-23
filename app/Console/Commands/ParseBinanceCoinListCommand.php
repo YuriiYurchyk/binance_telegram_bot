@@ -32,28 +32,27 @@ class ParseBinanceCoinListCommand extends Command
 
             $relatedQuoteCoin = $baseCoin->quoteCoins()->where('name', $quoteCoin->name)->first();
             if ($relatedQuoteCoin) {
-                $this->updateIfDetailsUpdated($relatedQuoteCoin, $status, $binanceAddedAt);
+                $this->updateIfDetailsUpdated($relatedQuoteCoin, $status);
 
                 continue;
             }
 
             $baseCoin->quoteCoins()->save($quoteCoin, [
                 'status' => $status,
-                'binance_added_at' => $binanceAddedAt,
             ]);
         }
 
         return 0;
     }
 
-    private function updateIfDetailsUpdated(Coin $relatedQuoteCoin, int $status, ?Carbon $binanceAddedAt): void
+    private function updateIfDetailsUpdated(Coin $relatedQuoteCoin, int $status): void
     {
         /**
          * @var \Illuminate\Database\Eloquent\Relations\Pivot $pivot
          */
         $pivot = $relatedQuoteCoin->pivot;
         $pivot->status = $status;
-        $pivot->binance_added_at = $binanceAddedAt;
+
 
         if ($pivot->isDirty()) {
             $pivot->save();

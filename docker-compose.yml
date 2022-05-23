@@ -16,6 +16,7 @@ services:
     environment:
       PHP_IDE_CONFIG: "serverName=docker"
     volumes:
+      - /media/humorist/D06E6A3A6E6A198C2/binance-data:/var/www/ssd/binance-data
       - ./:/var/www
       - ./storage/logs:/var/log
     depends_on:
@@ -24,7 +25,7 @@ services:
   mysql:
     image: mariadb:10.5.12
     volumes:
-      - ./docker/storage/mysql:/var/lib/mysql
+      - /media/humorist/D06E6A3A6E6A198C2/docker/storage/mysql:/var/lib/mysql
     ports:
       - 33065:3306
     environment:

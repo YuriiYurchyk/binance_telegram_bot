@@ -5,6 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Encore\Admin\Traits\DefaultDatetimeFormat;
+use Illuminate\Database\Query\Builder;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Collection;
 
 class TradingPair extends Model
 {
@@ -16,18 +20,20 @@ class TradingPair extends Model
         'quote_coin',
         'status',
         'binance_added_at',
+        'binance_removed_at',
     ];
 
     protected $casts = [
         'binance_added_at' => 'datetime',
+        'binance_removed_at' => 'datetime',
     ];
 
-    public function baseCoin(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function baseCoinRel(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Coin::class, 'base_coin', 'name',);
     }
 
-    public function quoteCoin(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function quoteCoinRel(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Coin::class, 'quote_coin', 'name',);
     }
@@ -54,14 +60,87 @@ class TradingPair extends Model
 
     public function getTradingPairCode(): string
     {
-        return $this->baseCoin->name . '/' . $this->quoteCoin->name;
+        return $this->base_coin . '/' . $this->quote_coin;
     }
 
     public function getTradingSpotPairCode(): string
     {
-        return $this->baseCoin->name . $this->quoteCoin->name;
+        return $this->base_coin . $this->quote_coin;
     }
 
+    public static function scopeActiveByPeriod(\Illuminate\Database\Eloquent\Builder $q, CarbonPeriod $period)
+    {
+        return $q->where('binance_added_at', '<', (string) $period->getStartDate())
+                 ->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($period) {
+                     $q->whereNull('binance_removed_at');
+
+                     return $q->orWhere('binance_removed_at', '>', (string) $period->getEndDate());
+                 });
+    }
+
+    public function getPriceByDateTime(Carbon $dateTime): float
+    {
+        $timestamp = $dateTime->clone()->getTimestampMs();
+        $timestamp2 = $dateTime->clone()->addMinutes(2)->getTimestampMs();
+
+        $price = $this->binanceSpotHistory()
+                      ->orderBy('open_time')
+                      ->where('open_time', '>=', $timestamp)
+                      ->where('open_time', '<=', $timestamp2)
+                      ->first();
+
+        return $price->open;
+    }
+
+    public function getMaxPriceByPeriod(Carbon $date1, Carbon $date2): float
+    {
+        $timestamp = $date1->clone()->getTimestampMs();
+        $timestamp2 = $date2->clone()->getTimestampMs();
+        $price = $this->binanceSpotHistory()
+                      ->orderByDesc('high')
+                      ->where('open_time', '>=', $timestamp)
+                      ->where('open_time', '<=', $timestamp2)
+                      ->first();
+
+        return $price->high;
+    }
+
+    /**
+     * @param  Carbon  $datatime
+     *
+     * @return Collection<int, TradingPair>
+     */
+    public function getAvailablePairsByDate(Carbon $datatime): Collection
+    {
+        $q = self::query();
+        $coins = [];
+
+        $countBaseCoin = self::query()->where('base_coin', $this->base_coin)
+                             ->orWhere('quote_coin', $this->base_coin)->count();
+        if ($countBaseCoin < 9) {
+            $coins[] = $this->base_coin;
+        }
+
+        $countQuoteCoin = self::query()->where('base_coin', $this->quote_coin)
+                              ->orWhere('quote_coin', $this->quote_coin)->count();
+        if ($countQuoteCoin < 9) {
+            $coins[] = $this->quote_coin;
+        }
+
+        $q
+            ->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($coins) {
+                $q->whereIn('base_coin', $coins)
+                  ->orWhereIn('quote_coin', $coins);
+            })
+            ->whereNot('id', $this->id)
+            ->where('binance_added_at', '<=', (string) $datatime)
+            ->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($datatime) {
+                $q->where('binance_removed_at', '>=', (string) $datatime);
+                $q->orWhereNull('binance_removed_at');
+            });
+
+        return $q->get();
+    }
 
 
 }

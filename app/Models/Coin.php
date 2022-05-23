@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Coin extends Model
 {
@@ -35,5 +36,23 @@ class Coin extends Model
             parentKey: 'name',
             relatedKey: 'name',
         )->withTimestamps()->withPivot('status', 'binance_added_at');
+    }
+
+    public function tradingPairsBaseCoin(): HasMany
+    {
+        return $this->hasMany(
+            TradingPair::class,
+            foreignKey: 'base_coin',
+            localKey: 'name',
+        );
+    }
+
+    public function tradingPairsQuoteCoin(): HasMany
+    {
+        return $this->hasMany(
+            TradingPair::class,
+            foreignKey: 'quote_coin',
+            localKey: 'name',
+        );
     }
 }

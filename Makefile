@@ -15,11 +15,16 @@ db:
 	php artisan binance:run
 
 ps:
-	docker ps
+	docker-compose ps
 
 perm:
 	find . -type f -exec chmod a+rw {} \;
 	find . -type d -exec chmod a+rwx {} \;
-	# sudo chmod 777 ./ -R
+	chown -R www-data:www-data ./storage
+	chown -R www-data:www-data ./bootstrap
+	chown -R www-data:www-data ./binance-data
 
-#docker-compose logs
+	# sudo chmod 777 ./ -R
+	# chown -R $USER:$USER .
+
+#docker-comp
