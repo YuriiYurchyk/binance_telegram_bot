@@ -7,7 +7,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use App\Services\ImporterBinanceHistoryDataFromCsv;
 
 class ImportBinanceHistoryDataJob implements ShouldQueue
@@ -17,19 +16,14 @@ class ImportBinanceHistoryDataJob implements ShouldQueue
     private ImporterBinanceHistoryDataFromCsv $importer;
 
     public function __construct(
-        private string $csvFileName,
-        private string $dataRange,
+        private string $csvFullPath,
         private int $tradingPairId,
-        private string $fileNameWithoutPath,
     ) {
         $this->importer = new ImporterBinanceHistoryDataFromCsv();
     }
 
     public function handle()
     {
-        ini_set("memory_limit", "-1");
-        DB::disableQueryLog();
-
-        $this->importer->handle($this->csvFileName, $this->dataRange, $this->tradingPairId, $this->fileNameWithoutPath);
+        $this->importer->handle($this->csvFullPath, $this->tradingPairId);
     }
 }

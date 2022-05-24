@@ -29,6 +29,8 @@ class AnalyzePairsPriceOnAddNewsAboutAddPair extends Command
         // 5. Періодично скачувати і парсити xml
         // 6. Завантажувати ціну токенів по днях, щоб мати дані за поточний місяць
 
+        // налаштувати скачування даних про коїн по днях по запиту
+
         PriceOnAddNewsAboutAddPair::truncate();
 
         /** @var TradingPair[] $tradingPair */
