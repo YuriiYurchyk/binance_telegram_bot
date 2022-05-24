@@ -7,7 +7,7 @@ use App\Models\TradingPair;
 use App\Jobs\DownloadBinanceData;
 use Cache;
 
-class BinanceHistoricalDataDownloaderService
+class BinanceDownloadHDataService
 {
     public const        STATUS_FILE_ALREADY_DOWNLOADED = 1;
     public const        STATUS_REMOTE_FILE_NOT_FOUND   = 404;

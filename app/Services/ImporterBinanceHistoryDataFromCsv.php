@@ -57,9 +57,9 @@ class ImporterBinanceHistoryDataFromCsv
                 ->ignoreLines(1)
                 ->load();
 
-        HandledFiles::insert([
+        HandledFiles::insertOrIgnore([[
             'file_name' => $onlyFileNameWithExt,
-        ],
+        ]],
         );
 
         fclose($tempFilePointer);
@@ -71,6 +71,7 @@ class ImporterBinanceHistoryDataFromCsv
     {
         $csvGzFullPath = $csvFullPath . '.gz';
 
+        var_dump('compress ' . $csvFullPath);
         copy($csvFullPath, 'compress.zlib:///' . trim($csvGzFullPath, '/'));
         unlink($csvFullPath);
     }
