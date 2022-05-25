@@ -62,7 +62,7 @@ class DownloadBinanceData implements ShouldQueue
 
         unlink($tempPathCsv);
 
-        ImportBinanceHistoryDataJob::dispatch($csvFullPath, $this->tradingPairId);
+        ImportBinanceHistoryDataJob::dispatch($csvFullPath, $this->tradingPairId)->onQueue('import');
     }
 
     private function createDestinationFolder(): void

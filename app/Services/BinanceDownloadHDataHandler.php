@@ -51,7 +51,7 @@ class BinanceDownloadHDataHandler
         }
         //            $this->importInDb();
 
-        $this->compressFile();
+        //        $this->compressFile();
     }
 
     private function handleMonthByDay(Carbon $month)
@@ -59,13 +59,13 @@ class BinanceDownloadHDataHandler
         $startDate = $month->clone()->startOfMonth();
 
         $endDate = match ($month->isCurrentMonth()) {
-            true => Carbon::now()->subDays(3),
+            true => Carbon::now()->subDays(1),
             false => $month->clone()->endOfMonth(),
         };
 
-        while ($startDate->lt($endDate)) {
+        while ($startDate->lte($endDate)) {
             $this->dailyDownloaderService->setDate($startDate);
-            $this->dailyDownloaderService->handle();
+            $s = $this->dailyDownloaderService->handle();
 
             $startDate->addDay();
         }

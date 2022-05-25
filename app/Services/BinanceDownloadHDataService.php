@@ -39,7 +39,7 @@ class BinanceDownloadHDataService
 
     public function setDate(Carbon $date): self
     {
-        $this->date = $date;
+        $this->date = clone $date;
 
         return $this;
     }
@@ -83,7 +83,8 @@ class BinanceDownloadHDataService
         $destinationPath = $this->getDestinationPath();
         $fileNameNoExt = $this->getFilename();
 
-        DownloadBinanceData::dispatch($url, $destinationPath, $fileNameNoExt, $this->tradingPair->id);
+        DownloadBinanceData::dispatch($url, $destinationPath, $fileNameNoExt, $this->tradingPair->id)
+                           ->onQueue('download');
 
         return self::STATUS_FILE_WILL_BE_DOWNLOADED;
     }
