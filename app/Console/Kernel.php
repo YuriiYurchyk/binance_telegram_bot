@@ -17,7 +17,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('parser-news:binance')->everyMinute();
-        $schedule->command('google:parse-alerts')->everyMinute();
+        $schedule->command('google:parse-alerts')->everyTenMinutes();
         $schedule->command('binance:update-coin-list')->dailyAt('04:00');
 
         $schedule->command('queue:work --max-time=300')
