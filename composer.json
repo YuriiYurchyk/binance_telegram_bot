@@ -11,7 +11,6 @@
         "php": "^8.0.2",
         "ext-dom": "*",
         "ext-ftp": "*",
-        "ext-zip": "*",
         "danielme85/laravel-log-to-db": "^3.0",
         "ellgreen/laravel-loadfile": "^2.0",
         "encore/laravel-admin": "^1.8",
