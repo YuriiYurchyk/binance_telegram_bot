@@ -25,18 +25,9 @@ class BinanceDownloadSpotDataCommand extends Command
 
         /** @var Collection<int, TradingPair> $tradingPairs */
 
-//        $tp = Coin::where('google_alerts', 1)->tradingPairsBaseCoin();
+        //        $tp = Coin::where('google_alerts', 1)->tradingPairsBaseCoin();
 
-        //        $tradingPairs = TradingPair::orderBy('id')->get();
-        $tradingPairs = TradingPair
-            ::query()
-            ->whereHas('baseCoinRel', function ($q) {
-                $q->where('google_alerts', 1);
-            })
-            ->orWhereHas('quoteCoinRel', function ($q) {
-                $q->where('google_alerts', 1);
-            })
-            ->get();
+        $tradingPairs = TradingPair::orderBy('id')->get();
 
         foreach ($tradingPairs as $pair) {
             $startDate = $pair->binance_added_at?->clone() ?: $initStartDate->clone();

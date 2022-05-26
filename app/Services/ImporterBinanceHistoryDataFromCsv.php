@@ -12,14 +12,43 @@ class ImporterBinanceHistoryDataFromCsv
         $onlyFileNameWithExt = explode('/', $csvFullPath);
         $onlyFileNameWithExt = array_pop($onlyFileNameWithExt);
 
-        if (HandledFiles::where('file_name', $onlyFileNameWithExt)->exists()) {
+        $handledFile = HandledFiles
+            ::where('file_name', $onlyFileNameWithExt)
+            ->first();
+        if (1 === $handledFile?->handled_success) {
             return false;
-        };
+        }
+
+        if (!$handledFile) {
+            $handledFile = HandledFiles::create([
+                'file_name' => $onlyFileNameWithExt,
+                'handled_success' => 0,
+            ]);
+        }
 
         $tempFilePointer = tmpfile();
         $tempFilePath = stream_get_meta_data($tempFilePointer)['uri'];
 
-        $csv = file_get_contents($csvFullPath);
+        if (file_exists($csvFullPath)) {
+            $csv = file_get_contents($csvFullPath);
+//            if ('' === $csv || false === $csv) {
+//                unlink($csvFullPath);
+//
+//                return;
+//            }
+        } elseif (file_exists($csvFullPath . '.gz')) {
+            $csv = file_get_contents($csvFullPath . '.gz');
+
+//            try {
+                $csv = zlib_decode($csv);
+//            } catch (\Exception) {
+//                unlink($csvFullPath . '.gz');
+//
+//                return;
+//            }
+        } else {
+            throw new \Exception("Files $csvFullPath (and .gz) not found");
+        }
 
         $fields = [
             0 => 'open_time',
@@ -27,11 +56,11 @@ class ImporterBinanceHistoryDataFromCsv
             2 => 'high',
             3 => 'low',
             4 => 'close',
-            5 => 'close_time',
+            6 => 'close_time',
         ];
         $csvReader = new CsvReader($csv, $fields, "\n");
 
-        $header = array_merge(["trading_pair_id"], $fields);
+        $header = array_merge(["trading_pair_id"], $fields, ['handled_file_id']);
 
         $fp = fopen($tempFilePath, 'wb');
         //Write the header
@@ -40,31 +69,44 @@ class ImporterBinanceHistoryDataFromCsv
         while ($line = $csvReader->getNextParsedLine()) {
             $row = array_merge([
                 'trading_pair_id' => $tradingPairId,
-            ], $line);
+            ], $line,
+                ['handled_file_id' => $handledFile->id]);
 
             //Write fields
             fputcsv($fp, $row);
         }
         fclose($fp);
 
-        LoadFile::file($tempFilePath, $local = true)
-                ->into('binance_spot_history')
-                ->columns($header)
-                ->fieldsTerminatedBy(",")
-                ->fieldsEscapedBy("\\\\")
-                ->fieldsEnclosedBy('"')
-                ->linesTerminatedBy(PHP_EOL)
-                ->ignoreLines(1)
-                ->load();
-
-        HandledFiles::insertOrIgnore([[
-            'file_name' => $onlyFileNameWithExt,
-        ]],
-        );
+//        try {
+            LoadFile::file($tempFilePath, true)
+                    ->into('binance_spot_history')
+                    ->columns($header)
+                    ->fieldsTerminatedBy(",")
+                    ->fieldsEscapedBy("\\\\")
+                    ->fieldsEnclosedBy('"')
+                    ->linesTerminatedBy(PHP_EOL)
+                    ->ignoreLines(1)
+                    ->replace()
+                    ->load();
+//        } catch (\Exception) {
+//            if (file_exists($csvFullPath)) {
+//                unlink($csvFullPath);
+//            }
+//
+//            if (file_exists($csvFullPath . '.gz')) {
+//                unlink($csvFullPath . '.gz');
+//            }
+//
+//            return;
+//        }
 
         fclose($tempFilePointer);
 
-        $this->compressFile($csvFullPath);
+        if (file_exists($csvFullPath)) {
+            $this->compressFile($csvFullPath);
+        }
+
+        $handledFile->update(['handled_success' => 1]);
     }
 
     private function compressFile(string $csvFullPath): void

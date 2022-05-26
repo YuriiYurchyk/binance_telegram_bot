@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use App\Models\TradingPair;
 use App\Jobs\DownloadBinanceData;
 use Cache;
+use App\Jobs\ImportBinanceHistoryDataJob;
+use App\Models\HandledFiles;
 
 class BinanceDownloadHDataService
 {
@@ -72,6 +74,20 @@ class BinanceDownloadHDataService
     private function downloadPairData(): int
     {
         if ($this->isFileAlreadyDownloaded()) {
+            $fileNameCsv = $this->getFilename('.csv');
+
+            $handledFileSuccess = HandledFiles
+                ::where('file_name', $fileNameCsv)
+                ->where('handled_success', 1)
+                ->exists();
+            if ($handledFileSuccess) {
+                return self::STATUS_FILE_ALREADY_DOWNLOADED;
+            }
+
+            $csvFullPath = $this->getDestinationPath() . '/' . $fileNameCsv;
+
+            ImportBinanceHistoryDataJob::dispatch($csvFullPath, $this->tradingPair->id)->onQueue('import');
+
             return self::STATUS_FILE_ALREADY_DOWNLOADED;
         }
 
@@ -109,8 +125,8 @@ class BinanceDownloadHDataService
     private function getFormattedDate(): string
     {
         $format = match ($this->period) {
-            'daily' => 'Y-m-d',
-            'monthly' => 'Y-m',
+            self::DATA_RANGE_DAILY => 'Y-m-d',
+            self::DATA_RANGE_MONTHLY => 'Y-m',
         };
 
         return $this->date->format($format);

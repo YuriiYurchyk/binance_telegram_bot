@@ -24,14 +24,20 @@ class SetBinanceCryptoPairDateAddingCommand extends Command
             }
             $lastOrderCloseTime = $tradePair->binanceSpotHistory()
                                             ->orderByDesc('open_time')
-                                            ->first()->close_time;
+                                            ->first();
+
+            if (!$lastOrderCloseTime) {
+                var_dump($tradePair->id);
+            }
+
+            $lastOrderCloseTime = $lastOrderCloseTime?->close_time;
             if (!$lastOrderCloseTime) {
                 continue;
             }
 
-            $lastOrderOpenTimeC = Carbon::createFromTimestampMsUTC($lastOrderCloseTime);
-            $lastOrderOpenTimeC->setTimezone(config('app.timezone'));
-            $tradePair->binance_removed_at = $lastOrderOpenTimeC;
+            $lastOrderCloseTimeC = Carbon::createFromTimestampMsUTC($lastOrderCloseTime);
+            $lastOrderCloseTimeC->setTimezone(config('app.timezone'));
+            $tradePair->binance_removed_at = $lastOrderCloseTimeC;
 
             $tradePair->save();
         }

@@ -11,5 +11,6 @@ class HandledFiles extends Model
 
     protected $fillable = [
         'file_name',
+        'handled_success',
     ];
 }

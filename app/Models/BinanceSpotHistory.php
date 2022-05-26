@@ -19,7 +19,7 @@ class BinanceSpotHistory extends Model
         'low',
         'close',
         'close_time',
-        'source_file_name',
+        'handled_file_id',
     ];
 
     public function tradingPair()
