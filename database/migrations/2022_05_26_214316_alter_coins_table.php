@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('coins', function (Blueprint $table) {
             $table->string('google_alerts_url')->nullable()->change();
-            $table->boolean('google_alerts')->default(false)->change();
+            $table->boolean('google_alerts')->default(0)->change();
         });
     }
 
