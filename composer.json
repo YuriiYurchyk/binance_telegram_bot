@@ -21,7 +21,6 @@
         "laravel/framework": "^9.2",
         "symfony/dom-crawler": "^5.0",
         "ext-pdo": "*",
-        "ext-zlib": "*",
         "ext-simplexml": "*",
         "ext-libxml": "*"
     },
