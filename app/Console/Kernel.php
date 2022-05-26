@@ -25,6 +25,8 @@ class Kernel extends ConsoleKernel
 
         //        $schedule->command('telegram-bot:handle-messages')->everyMinute();
         //        $schedule->command('bot:run')->everyMinute();
+
+        $schedule->command('log:delete')->daily();
     }
 
     /**
