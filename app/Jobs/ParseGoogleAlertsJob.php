@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 use App\Models\GoogleAlertsNews;
 use App\Models\Coin;
+use Log;
 
 class ParseGoogleAlertsJob implements ShouldQueue
 {
@@ -22,6 +23,8 @@ class ParseGoogleAlertsJob implements ShouldQueue
 
     public function handle()
     {
+        Log::info('Start handle ' . static::class);
+
         $coin = Coin::find($this->coinId);
         $this->handleCoinAlert($coin);
     }
