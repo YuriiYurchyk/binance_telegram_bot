@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Binance\API;
 use App\Models\Coin;
-use Carbon\Carbon;
 
 class ParseBinanceCoinListCommand extends Command
 {
@@ -21,7 +20,6 @@ class ParseBinanceCoinListCommand extends Command
 
         foreach ($info['symbols'] as $details) {
             $status = 'TRADING' === $details['status'] ? 1 : 0;
-            $binanceAddedAt = null;
 
             /**
              * @var Coin $baseCoin

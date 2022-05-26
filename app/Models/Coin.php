@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Coin extends Model
 {
@@ -12,6 +14,8 @@ class Coin extends Model
 
     protected $fillable = [
         'name',
+        'google_alerts',
+        'google_alerts_url',
     ];
 
     public function baseCoins()
@@ -54,5 +58,20 @@ class Coin extends Model
             foreignKey: 'quote_coin',
             localKey: 'name',
         );
+    }
+
+    public function googleAlertsNews(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            GoogleAlertsNews::class,
+            'coins_google_alerts_news',
+            'coins_id',
+            'google_alerts_news_id',
+        );
+    }
+
+    public static function scopeGoogleAlerts(Builder $q)
+    {
+        return $q->where('google_alerts',true)->whereNotNull('google_alerts_url');
     }
 }

@@ -21,7 +21,9 @@
         "laravel/framework": "^9.2",
         "symfony/dom-crawler": "^5.0",
         "ext-pdo": "*",
-        "ext-zlib": "*"
+        "ext-zlib": "*",
+        "ext-simplexml": "*",
+        "ext-libxml": "*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

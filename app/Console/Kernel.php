@@ -17,9 +17,13 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('parser-news:binance')->everyMinute();
-        $schedule->command('parser-news:cryptonews')->everyMinute();
+        $schedule->command('google:parse-alerts')->everyTenMinutes();
         $schedule->command('binance:update-coin-list')->dailyAt('04:00');
-//        $schedule->command('telegram-bot:handle-messages')->everyMinute();
+
+        $schedule->command('php artisan queue:work --max-time=300')
+                 ->everyFiveMinutes();
+
+        //        $schedule->command('telegram-bot:handle-messages')->everyMinute();
         //        $schedule->command('bot:run')->everyMinute();
     }
 
