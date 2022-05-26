@@ -4,6 +4,9 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\ParseBinanceCoinListCommand;
+use App\Console\Commands\GoogleAlertsParserCommand;
+use App\Console\Commands\NewsBinanceParserCommand;
 
 class Kernel extends ConsoleKernel
 {
@@ -16,11 +19,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('parser-news:binance')->everyMinute();
-        $schedule->command('google:parse-alerts')->everyTenMinutes();
-        $schedule->command('binance:update-coin-list')->dailyAt('04:00');
+        $schedule->command(NewsBinanceParserCommand::class)->everyMinute();
+        $schedule->command(GoogleAlertsParserCommand::class)->everyTenMinutes();
+        $schedule->command(ParseBinanceCoinListCommand::class)->dailyAt('04:00');
 
-        $schedule->command('queue:work --stop-when-empty')
+        $schedule->command('queue:work', ['--stop-when-empty'])
                  ->everyMinute();
 
         //        $schedule->command('telegram-bot:handle-messages')->everyMinute();
