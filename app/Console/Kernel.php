@@ -20,8 +20,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('google:parse-alerts')->everyTenMinutes();
         $schedule->command('binance:update-coin-list')->dailyAt('04:00');
 
-        $schedule->command('queue:work --max-time=300')
-                 ->everyFiveMinutes();
+        $schedule->command('queue:work --stop-when-empty')
+                 ->everyMinute();
 
         //        $schedule->command('telegram-bot:handle-messages')->everyMinute();
         //        $schedule->command('bot:run')->everyMinute();
