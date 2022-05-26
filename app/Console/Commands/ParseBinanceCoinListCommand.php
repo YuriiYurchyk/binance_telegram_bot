@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Binance\API;
 use App\Models\Coin;
+use Log;
 
 class ParseBinanceCoinListCommand extends Command
 {
@@ -14,6 +15,8 @@ class ParseBinanceCoinListCommand extends Command
 
     public function handle()
     {
+        Log::info('Start handle ' . static::class);
+
         $api = new API(config_path('php-binance-api.json'));
 
         $info = $api->exchangeInfo();
