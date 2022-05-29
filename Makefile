@@ -1,5 +1,5 @@
 up:
-	docker-compose up --build --force-recreate -d
+	DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose up --build --force-recreate -d
 	docker ps
 	docker-compose exec php-fpm bash
 
@@ -11,11 +11,19 @@ r: down up
 bash:
 	docker-compose exec php-fpm bash
 
+node:
+	docker-compose exec node bash
+
 db:
 	php artisan binance:run
 
 ps:
 	docker-compose ps
+
+helper:
+	php artisan ide-helper:generate
+	php artisan ide-helper:meta
+	php artisan ide-helper:models
 
 perm:
 	find . -type f -exec chmod a+rw {} \;

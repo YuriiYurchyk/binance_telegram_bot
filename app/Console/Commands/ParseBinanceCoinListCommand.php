@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Binance\API;
 use App\Models\Coin;
 use Log;
+use App\Models\TradingPair;
 
 class ParseBinanceCoinListCommand extends Command
 {
@@ -42,6 +43,13 @@ class ParseBinanceCoinListCommand extends Command
                 'status' => $status,
             ]);
         }
+
+        TradingPair::query()->each(function (TradingPair $tradingPair) {
+            $tradingPair->pair_code = $tradingPair->getTradingSpotPairCode();
+            if ($tradingPair->isDirty()) {
+                $tradingPair->save();
+            }
+        });
 
         return 0;
     }

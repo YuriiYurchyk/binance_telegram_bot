@@ -23,10 +23,11 @@ class BinanceDownloadHDataService
     private TradingPair $tradingPair;
     private string      $dataRange = "1m";
 
-    private string $basePath = '/var/www/ssd'; // '/var/www'
+    private string $basePath; // '/var/www'
 
     private function __construct(private string $period)
     {
+        $this->basePath = (new BinanceLinkHelper())->getBasePath();
     }
 
     public static function makeDailyDownloader(): self
@@ -105,11 +106,9 @@ class BinanceDownloadHDataService
         return self::STATUS_FILE_WILL_BE_DOWNLOADED;
     }
 
-    private function getDestinationPath(): string
+    public function getDestinationPath(): string
     {
-        $pairName = $this->tradingPair->getTradingSpotPairCode();
-
-        return rtrim($this->basePath, '/') . '/' . "binance-data/monthly/$pairName";
+        return (new BinanceLinkHelper())->setTradingPair($this->tradingPair)->getDestinationPath();
     }
 
     private function isFileAlreadyDownloaded(): bool

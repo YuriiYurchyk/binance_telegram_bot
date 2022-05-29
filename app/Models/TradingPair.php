@@ -21,6 +21,7 @@ class TradingPair extends Model
         'status',
         'binance_added_at',
         'binance_removed_at',
+        'pair_code',
     ];
 
     protected $casts = [
@@ -53,9 +54,9 @@ class TradingPair extends Model
         return $this->hasMany(BinanceSpotHistory::class, 'trading_pair_id', 'id');
     }
 
-    public function scopeActive($q)
+    public static function scopeActive($q, $status = 1)
     {
-        return $q->where('status', 1);
+        return $q->where('status', $status);
     }
 
     public function getTradingPairCode(): string
