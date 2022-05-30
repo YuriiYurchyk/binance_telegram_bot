@@ -16,14 +16,13 @@ class ImportBinanceHistoryDataJob implements ShouldQueue
     private ImporterBinanceHistoryDataFromCsv $importer;
 
     public function __construct(
-        private string $csvFullPath,
-        private int $tradingPairId,
+        private int $handledFileId
     ) {
         $this->importer = new ImporterBinanceHistoryDataFromCsv();
     }
 
     public function handle()
     {
-        $this->importer->handle($this->csvFullPath, $this->tradingPairId);
+        $this->importer->handle($this->handledFileId);
     }
 }

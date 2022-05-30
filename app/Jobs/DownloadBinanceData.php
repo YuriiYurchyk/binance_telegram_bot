@@ -7,43 +7,35 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Cache;
 use ZipArchive;
-use Exception;
+use App\Models\HandledFiles;
 
 class DownloadBinanceData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private string  $fileNameNoExt;
+
+    private ?string $destinationPath;
+
     public function __construct(
-        private string $url,
-        private string $destinationPath,
-        private string $fileNameNoExt,
-        private int $tradingPairId,
+        private int $handledFileId,
     ) {
     }
 
     public function handle()
     {
-        $this->createDestinationFolder();
+        $handledFile = HandledFiles::findOrFail($this->handledFileId);
 
-        var_dump($this->url);
 
-        try {
-            $content = file_get_contents($this->url);
-        } catch (\Exception $e) {
-            if (str_contains($e->getMessage(), '404')) {
-                Cache::forever($this->url, 404);
+        $destinationPath = $handledFile->getDestinationPath();
+        $this->createDestinationFolder($destinationPath);
 
-                return;
-            }
-
-            throw new Exception('Not found ' . $this->url);
-        }
+        $url = $handledFile->getBinanceFileUrl();
+        $content = file_get_contents($url);
 
         $tempPath = storage_path('app');
-
-        $tempPathWithFilenameZip = $tempPath . '/' . $this->fileNameNoExt . '.zip';
+        $tempPathWithFilenameZip = $tempPath . '/' . $handledFile->getFilename('.zip');
         file_put_contents($tempPathWithFilenameZip, $content);
         $zip = new ZipArchive();
         $zip->open($tempPathWithFilenameZip);
@@ -53,26 +45,24 @@ class DownloadBinanceData implements ShouldQueue
         //        copy('compress.zip://' . 'file.zip', 'compress.zlib:///' . trim($zipPathWithFilename, '/'));
         //        zip://foo.zip#bar.txt
 
-        $fileNameCsv = $this->fileNameNoExt . '.csv';
-        $csvFullPath = $this->destinationPath . '/' . $fileNameCsv;
-
-        $tempPathCsv = $tempPath . '/' . $fileNameCsv;
+        $tempPathCsv = $tempPath . '/' . $handledFile->getFilename('.csv');
         $contentFromTemp = file_get_contents($tempPathCsv);
+        $csvFullPath =  $handledFile->getFilenameFullPath('.csv');
         file_put_contents($csvFullPath, $contentFromTemp);
 
         unlink($tempPathCsv);
 
-        ImportBinanceHistoryDataJob::dispatch($csvFullPath, $this->tradingPairId)->onQueue('import');
+        ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
     }
 
-    private function createDestinationFolder(): void
+    private function createDestinationFolder(string $destinationPath): void
     {
-        if (!is_dir($this->destinationPath)) {
-            if (!mkdir($this->destinationPath, 0777, true)
-                && !is_dir($this->destinationPath)
+        if (!is_dir($destinationPath)) {
+            if (!mkdir($destinationPath, 0777, true)
+                && !is_dir($destinationPath)
             ) {
                 throw new \RuntimeException(sprintf('Directory "%s" was not created',
-                    $this->destinationPath));
+                    $destinationPath));
             }
         }
     }

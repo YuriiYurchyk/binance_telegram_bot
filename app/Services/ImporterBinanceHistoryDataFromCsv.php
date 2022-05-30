@@ -7,23 +7,21 @@ use App\Models\HandledFiles;
 
 class ImporterBinanceHistoryDataFromCsv
 {
-    public function handle(string $csvFullPath, int $tradingPairId)
+    public function handle(int $handledFileId)
     {
+        $handledFile = HandledFiles::findOrFail($handledFileId);
+        $csvFullPath = $handledFile->getFilenameFullPath('.csv');
+        $tradingPairId = $handledFile->tradingPair->id;
+
         $onlyFileNameWithExt = explode('/', $csvFullPath);
         $onlyFileNameWithExt = array_pop($onlyFileNameWithExt);
 
         $handledFile = HandledFiles
             ::where('file_name', $onlyFileNameWithExt)
+            ->where('file_exists_on_binance', 1)
             ->first();
-        if (1 === $handledFile?->handled_success) {
+        if (1 === $handledFile->handled_success) {
             return false;
-        }
-
-        if (!$handledFile) {
-            $handledFile = HandledFiles::create([
-                'file_name' => $onlyFileNameWithExt,
-                'handled_success' => 0,
-            ]);
         }
 
         $tempFilePointer = tmpfile();

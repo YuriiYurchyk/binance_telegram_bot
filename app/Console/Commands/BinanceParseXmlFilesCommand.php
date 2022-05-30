@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\BinanceLinkHelper;
 use App\Models\TradingPair;
 use App\Enum\BinancePeriodVO;
 use App\Enum\BinanceDailyVO;
@@ -16,15 +15,12 @@ class BinanceParseXmlFilesCommand extends Command
 
     protected $description = 'Command description';
 
-    protected BinanceLinkHelper $binanceLinkHelper;
-
     protected BinancePeriodVO $period;
 
     public function handle()
     {
 //        $tradingPairs = TradingPair::scopeActive(TradingPair::query())->get();
         $tradingPairs = TradingPair::get();
-        $this->binanceLinkHelper = new BinanceLinkHelper();
         $periodMonthly = new BinanceMonthlyVO();
         $periodDaily = new BinanceDailyVO();
 

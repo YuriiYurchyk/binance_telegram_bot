@@ -14,9 +14,10 @@ class SetHandledFileSetTradingPairCommand extends Command
 
     public function handle()
     {
-       HandledFiles::each(function (HandledFiles $handledFile) {
+        HandledFiles::whereDoesntHave('tradingPair')->each(function (HandledFiles $handledFile) {
             [$pairCode] = explode('-', $handledFile->file_name);
             $tradingPair = TradingPair::where('pair_code', $pairCode)->first();
+
             if (!$tradingPair) {
                 return;
             }

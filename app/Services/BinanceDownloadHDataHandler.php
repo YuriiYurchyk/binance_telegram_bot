@@ -3,16 +3,13 @@
 namespace App\Services;
 
 use Carbon\Carbon;
-use App\Jobs\ImportBinanceHistoryDataJob;
-use App\Models\HandledFiles;
 use App\Models\TradingPair;
+use App\Models\HandledFiles;
 
 class BinanceDownloadHDataHandler
 {
     private BinanceDownloadHDataService $monthlyDownloaderService;
     private BinanceDownloadHDataService $dailyDownloaderService;
-
-    private TradingPair $tradingPair;
 
     public function __construct()
     {
@@ -22,7 +19,6 @@ class BinanceDownloadHDataHandler
 
     public function setTradingPair(TradingPair $tradingPair): static
     {
-        $this->tradingPair = $tradingPair;
         $this->monthlyDownloaderService->setTradingPair($tradingPair);
         $this->dailyDownloaderService->setTradingPair($tradingPair);
 
@@ -40,21 +36,12 @@ class BinanceDownloadHDataHandler
     private function handleDate(Carbon $date)
     {
         $this->monthlyDownloaderService->setDate($date);
+        $monthlyHandledFile = $this->monthlyDownloaderService->createHandledFileIfNotExists();
 
-        if ($date->isCurrentMonth()) {
-            $this->handleMonthByDay($date);
-        } else {
-            $status = $this->monthlyDownloaderService->handle();
-            if (BinanceDownloadHDataService::STATUS_REMOTE_FILE_NOT_FOUND === $status) {
-                $this->handleMonthByDay($date);
-            }
-        }
-        //            $this->importInDb();
-
-        //        $this->compressFile();
+        $this->handleMonthByDay($date, $monthlyHandledFile);
     }
 
-    private function handleMonthByDay(Carbon $month)
+    private function handleMonthByDay(Carbon $month, HandledFiles $monthlyHandledFile)
     {
         $startDate = $month->clone()->startOfMonth();
 
@@ -65,28 +52,10 @@ class BinanceDownloadHDataHandler
 
         while ($startDate->lte($endDate)) {
             $this->dailyDownloaderService->setDate($startDate);
-            $s = $this->dailyDownloaderService->handle();
+            $this->dailyDownloaderService->createHandledFileIfNotExists($monthlyHandledFile);
 
             $startDate->addDay();
         }
-    }
-
-    private function importInDb()
-    {
-        $csvFullPathWithExt = $this->monthlyDownloaderService->getFilenameFullPath('.csv');
-        if (!file_exists($csvFullPathWithExt)) {
-            return false;
-        }
-
-        $onlyFileNameWithExt = $this->monthlyDownloaderService->getFilename('.csv');
-        if (HandledFiles::where('file_name', $onlyFileNameWithExt)->exists()) {
-            return false;
-        }
-
-        var_dump($csvFullPathWithExt);
-        ImportBinanceHistoryDataJob::dispatch($csvFullPathWithExt, $this->tradingPair->id);
-
-        return true;
     }
 
     private function compressFile()

@@ -10,6 +10,9 @@ use Exception;
 use App\Models\ParsedNews;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Як мінялась ціна токенів при додаванні новини про їх появу
+ */
 class AnalyzePairsPriceOnAddNewsAboutAddPair extends Command
 {
     protected $signature = 'binance:analyze-pairs';

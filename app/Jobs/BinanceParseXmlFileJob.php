@@ -9,39 +9,53 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Enum\BinancePeriodVO;
 use App\Enum\BinanceDailyVO;
-use App\Services\BinanceLinkHelper;
 use App\Models\TradingPair;
 use App\Models\HandledFiles;
+use Cache;
+use Carbon\CarbonInterval;
 
 class BinanceParseXmlFileJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected BinanceLinkHelper $binanceLinkHelper;
-
     private TradingPair $tradingPair;
 
     public function __construct(private int $tradingPairId, private BinancePeriodVO $period)
     {
-        //
     }
 
     public function handle()
     {
         $this->tradingPair = TradingPair::find($this->tradingPairId);
-        $this->binanceLinkHelper = new BinanceLinkHelper();
+
+        //        $code = $this->tradingPair->getTradingSpotPairCode();
+        //        if (get_class($this->period) === BinanceDailyVO::class) {
+        //            $like = "%$code-1m-____-__-__.csv%"; // ETCETH-1m-2020-12-06.csv
+        //        } elseif (get_class($this->period) === BinanceMonthlyVO::class) {
+        //            $like = "%$code-1m-____-__.csv%"; // ETCETH-1m-2020-12.csv
+        //        }
+        //        HandledFiles::where('file_name', 'like', $like)->update([
+        //            'file_exists_on_binance' => 0,
+        //        ]);
 
         $this->handlePair();
     }
 
     private function handlePair()
     {
-        $this->binanceLinkHelper->setTradingPair($this->tradingPair);
-        $this->binanceLinkHelper->setPeriod($this->period);
+        $xmlLink = $this->getXmlFilesListLink();
 
-        $xmlLink = $this->binanceLinkHelper->getXmlFilesListLink();
-        $xml = file_get_contents($xmlLink);
+        $xml = Cache::remember($xmlLink, new CarbonInterval(weeks: 1), function () use ($xmlLink) {
+            $xml = file_get_contents($xmlLink);
+
+            return $xml;
+        });
+
         $xml = $this->xmlToArray($xml);
+        if (is_bool($xml)) {
+            Cache::forget($xmlLink);
+            throw new \Exception();
+        }
 
         $contents = $xml['Contents'] ?? [];
         $contents = isset($contents['Name']) ? [$contents] : $contents;
@@ -72,7 +86,7 @@ class BinanceParseXmlFileJob implements ShouldQueue
             ]);
         }
         $handledFile->setPeriod($this->period);
-        $handledFile->file_exists_on_binance = true;
+        $handledFile->file_exists_on_binance = 1;
 
         if ($this->period instanceof (new BinanceDailyVO) && $handledFile->monthlyFile()->doesntExist()) {
             // find monthly record for this month
@@ -81,22 +95,30 @@ class BinanceParseXmlFileJob implements ShouldQueue
 
             $monthlyCsvFileName = implode('-', $chunks) . '.csv'; // example ETHBTC-1m-2017-01-01.zip
 
-            var_dump($monthlyCsvFileName);
+            //            var_dump($monthlyCsvFileName);
             $handledFileMonthly = HandledFiles::where('file_name', $monthlyCsvFileName)->first();
             if ($handledFileMonthly) {
-                $handledFile->monthlyFile()->associate($handledFileMonthly);
+                $handledFile->monthlyFile()->associate($handledFileMonthly)->save();
             }
         }
 
-        if ($handledFile->isDirty()) {
-            $handledFile->save();
-        }
+        $handledFile->save();
     }
 
-    private function xmlToArray(string $xml): array
+    private function xmlToArray(string $xml): array|bool
     {
         $alertXml = simplexml_load_string(data: $xml, options: LIBXML_NOCDATA);
 
         return json_decode(json_encode($alertXml), true);
+    }
+
+    private function getXmlFilesListLink(): string
+    {
+        $host = "https://s3-ap-northeast-1.amazonaws.com";
+        $pairCode = $this->tradingPair->getTradingSpotPairCode();
+
+        $xmlLink = "$host/data.binance.vision?delimiter=/&prefix=data/spot/$this->period/klines/$pairCode/1m/";
+
+        return $xmlLink;
     }
 }

@@ -9,7 +9,6 @@ use App\Services\BinanceDownloadHDataHandler;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\HandledFiles;
 use App\Jobs\DownloadBinanceData;
-use App\Services\BinanceLinkHelper;
 use App\Enum\BinanceDailyVO;
 use App\Jobs\ImportBinanceHistoryDataJob;
 use App\Enum\BinanceMonthlyVO;
@@ -22,48 +21,61 @@ class BinanceDownloadSpotDataCommand extends Command
 
     public function handle()
     {
-        $this->downloadQueue();
+        //        $this->createHandledFiles();
+
+        //        $this->downloadQueue();
+
         $this->importQueue();
 
-        return;
+        return 0;
+    }
 
+    private function createHandledFiles()
+    {
         $handler = new BinanceDownloadHDataHandler();
 
         $initStartDate = Carbon::now()->setYear(2017)->setMonth(05)->setDay(1);
-        $initEndDate = Carbon::now()->setYear(2022)->setMonth(05)->setDay(22);
+        $initEndDate = Carbon::now()->subDay();
 
         /** @var Collection<int, TradingPair> $tradingPairs */
 
         //        $tp = Coin::where('google_alerts', 1)->tradingPairsBaseCoin();
-
         $tradingPairs = TradingPair::orderBy('id')->get();
 
         foreach ($tradingPairs as $pair) {
-            $startDate = $pair->binance_added_at?->clone() ?: $initStartDate->clone();
+            $startDate = $pair->binance_added_at->clone();
             $endDate = $pair->binance_removed_at?->clone() ?: $initEndDate->clone();
 
             $handler->setTradingPair($pair);
             $handler->handlePeriod($startDate, $endDate);
         }
-
-        return 0;
     }
 
     private function downloadQueue()
     {
-        $helper = new BinanceLinkHelper();
-        $helper->setPeriod((new BinanceDailyVO()));
+        HandledFiles::scopePeriod(HandledFiles::query(), new BinanceMonthlyVO())
+                    ->where('file_exists_on_binance', 1)
+                    ->where('handled_success', 0)
+                    ->eachById(function (HandledFiles $handledFile) {
+                        if ($handledFile->isFileAlreadyDownloaded()) {
+                            return;
+                        }
 
-        HandledFiles::getMonthlyQuery()
-                    ->each(function (HandledFiles $handledFile) use ($helper) {
-                        $helper->setTradingPair($handledFile->tradingPair);
+                        DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
+                    });
 
-                        $destinationPath = $handledFile->getDestinationPath();
-                        $fileNameNoExt = $handledFile->getFilename(null);
-                        $url = $handledFile->getBinanceFileUrl();
+        HandledFiles::scopePeriod(HandledFiles::query(), new BinanceDailyVO())
+                    ->where('file_exists_on_binance', 1)
+                    ->where('handled_success', 0)
+                    ->whereHas('monthlyFile', function ($q) {
+                        $q->where('file_exists_on_binance', 0);
+                    })
+                    ->eachById(function (HandledFiles $handledFile) {
+                        if ($handledFile->isFileAlreadyDownloaded()) {
+                            return;
+                        }
 
-                        DownloadBinanceData::dispatch($url, $destinationPath, $fileNameNoExt, $handledFile->tradingPair)
-                                           ->onQueue('download');
+                        DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
                     });
     }
 
@@ -73,22 +85,19 @@ class BinanceDownloadSpotDataCommand extends Command
         HandledFiles::scopePeriod($q, new BinanceMonthlyVO());
         HandledFiles::scopeFileExistsOnBinance($q);
         $q->where('handled_success', 0);
-        $monthlyHandledFiles = $q->get();
-        $monthlyHandledFiles->each(function (HandledFiles $handledFile) {
-            ImportBinanceHistoryDataJob::dispatch($handledFile->getFullPath('.csv'), $handledFile->tradingPair->id)
-                                       ->onQueue('import');
+        $q->eachById(function (HandledFiles $handledFile) {
+            ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
         });
-
 
         $q = HandledFiles::query();
         HandledFiles::scopePeriod($q, new BinanceDailyVO());
         HandledFiles::scopeFileExistsOnBinance($q);
         $q->where('handled_success', 0);
-        $q->whereDoesntHave('monthlyFile');
-        $dailyHandledFiles = $q->get();
-        $dailyHandledFiles->each(function (HandledFiles $handledFile) {
-            ImportBinanceHistoryDataJob::dispatch($handledFile->getFullPath('.csv'), $handledFile->tradingPair->id)
-                                       ->onQueue('import');
+        $q->whereHas('monthlyFile', function ($q) {
+            HandledFiles::scopeFileExistsOnBinance($q, false);
+        });
+        $q->eachById(function (HandledFiles $handledFile) {
+            ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
         });
     }
 }

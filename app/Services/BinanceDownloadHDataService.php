@@ -4,40 +4,30 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use App\Models\TradingPair;
-use App\Jobs\DownloadBinanceData;
-use Cache;
-use App\Jobs\ImportBinanceHistoryDataJob;
 use App\Models\HandledFiles;
+use App\Enum\BinancePeriodVO;
+use App\Enum\BinanceDailyVO;
+use App\Enum\BinanceMonthlyVO;
 
 class BinanceDownloadHDataService
 {
-    public const        STATUS_FILE_ALREADY_DOWNLOADED = 1;
-    public const        STATUS_REMOTE_FILE_NOT_FOUND   = 404;
-    public const        STATUS_FILE_WILL_BE_DOWNLOADED = 3;
-
-    private const DATA_RANGE_DAILY   = 'daily';
-    private const DATA_RANGE_MONTHLY = 'monthly';
-
     protected Carbon $date;
 
     private TradingPair $tradingPair;
-    private string      $dataRange = "1m";
 
-    private string $basePath; // '/var/www'
-
-    private function __construct(private string $period)
+    private function __construct(private BinancePeriodVO $period)
     {
-        $this->basePath = (new BinanceLinkHelper())->getBasePath();
+
     }
 
     public static function makeDailyDownloader(): self
     {
-        return new self(self::DATA_RANGE_DAILY);
+        return new self(new BinanceDailyVO());
     }
 
     public static function makeMonthlyDownloader(): self
     {
-        return new self(self::DATA_RANGE_MONTHLY);
+        return new self(new BinanceMonthlyVO());
     }
 
     public function setDate(Carbon $date): self
@@ -54,97 +44,19 @@ class BinanceDownloadHDataService
         return $this;
     }
 
-    private function getDownloadUrl(): string
+    public function createHandledFileIfNotExists(HandledFiles $monthlyHandledFile = null): HandledFiles
     {
-        $fileNameZip = $this->getFilename('.zip');
-        $pairName = $this->tradingPair->getTradingSpotPairCode();;
+        $fileNameCsv = HandledFiles::generateFilename($this->tradingPair, $this->period, $this->date, '.csv');
 
-        return "https://data.binance.vision/data/spot/$this->period/klines/$pairName/$this->dataRange/$fileNameZip";
-    }
-
-    public function isRemoteFileNotFound(): bool
-    {
-        return 404 === (int) Cache::get($this->getDownloadUrl());
-    }
-
-    public function handle(): int
-    {
-        return $this->downloadPairData();
-    }
-
-    private function downloadPairData(): int
-    {
-        if ($this->isFileAlreadyDownloaded()) {
-            $fileNameCsv = $this->getFilename('.csv');
-
-            $handledFileSuccess = HandledFiles
-                ::where('file_name', $fileNameCsv)
-                ->where('handled_success', 1)
-                ->exists();
-            if ($handledFileSuccess) {
-                return self::STATUS_FILE_ALREADY_DOWNLOADED;
-            }
-
-            $csvFullPath = $this->getDestinationPath() . '/' . $fileNameCsv;
-
-            ImportBinanceHistoryDataJob::dispatch($csvFullPath, $this->tradingPair->id)->onQueue('import');
-
-            return self::STATUS_FILE_ALREADY_DOWNLOADED;
+        $handledFile = HandledFiles::where('file_name', $fileNameCsv)->first();
+        if (empty($handledFile)) {
+            $handledFile = HandledFiles::createModel($this->tradingPair, $this->period, $this->date);
+        }
+        if ($monthlyHandledFile) {
+            $monthlyHandledFile->dailyFiles()->save($handledFile);
         }
 
-        if ($this->isRemoteFileNotFound()) {
-            return self::STATUS_REMOTE_FILE_NOT_FOUND;
-        }
-
-        $url = $this->getDownloadUrl();
-        $destinationPath = $this->getDestinationPath();
-        $fileNameNoExt = $this->getFilename();
-
-        DownloadBinanceData::dispatch($url, $destinationPath, $fileNameNoExt, $this->tradingPair->id)
-                           ->onQueue('download');
-
-        return self::STATUS_FILE_WILL_BE_DOWNLOADED;
+        return $handledFile;
     }
 
-    public function getDestinationPath(): string
-    {
-        return (new BinanceLinkHelper())->setTradingPair($this->tradingPair)->getDestinationPath();
-    }
-
-    private function isFileAlreadyDownloaded(): bool
-    {
-        $csvPath = $this->getFilenameFullPath('.csv');
-        $csvGzPath = $this->getFilenameFullPath('.csv.gz');
-        $zipPath = $this->getFilenameFullPath('.zip');
-
-        return file_exists($csvPath)
-            || file_exists($csvGzPath);
-    }
-
-    private function getFormattedDate(): string
-    {
-        $format = match ($this->period) {
-            self::DATA_RANGE_DAILY => 'Y-m-d',
-            self::DATA_RANGE_MONTHLY => 'Y-m',
-        };
-
-        return $this->date->format($format);
-    }
-
-    public function getFilename(string $ext = null): string
-    {
-        $pairName = $this->tradingPair->getTradingSpotPairCode();
-        $dateFormatted = $this->getFormattedDate();
-
-        return "$pairName-{$this->dataRange}-{$dateFormatted}{$ext}";
-    }
-
-    public function getFilenameFullPath(string $ext): string
-    {
-        $fileName = $this->getFilename($ext);
-        $tradingPairName = $this->tradingPair->getTradingSpotPairCode();;
-        $fileSubPath = "binance-data/monthly/$tradingPairName/$fileName";
-
-        return rtrim($this->basePath, '/') . '/' . $fileSubPath;
-    }
 }
