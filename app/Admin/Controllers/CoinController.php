@@ -58,7 +58,7 @@ class CoinController extends Controller
                      $tableData[] = [
                          'periodStart' => (string) $period->getStartDate(),
                          'periodEnd' => (string) $period->getEndDate(),
-                         'newsCount' => $model->getAttribute($model->getK($period->getStartDate(), 24)),
+                         'newsCount' => $model->getAttribute($model->getK($period->getStartDate(), 4)),
                      ];
                  }
 
