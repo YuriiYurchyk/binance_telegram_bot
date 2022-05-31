@@ -35,34 +35,18 @@ class CoinController extends Controller
                   ->withCount('googleAlertsNews as googleAlertsNewsCountAll');
 
         $datePeriods4 = $this->getDatePeriods(4);
-        $this->addNewsCountByPeriodsInQuery($q, $datePeriods4);
+        $this->addNewsCountByPeriodsInQuery($q, $datePeriods4, 4);
 
         $datePeriods24 = $this->getDatePeriods(24);
-        $this->addNewsCountByPeriodsInQuery($q, $datePeriods24);
+        $this->addNewsCountByPeriodsInQuery($q, $datePeriods24, 24);
 
         $grid->column('id', 'Id')->sortable();
         $grid->column('name', 'Name')->sortable()
-             ->expand(function (Coin $model) use ($datePeriods4, $datePeriods24) {
-                 $tableData = [];
-                 $tableData[] = ['24 HOURS'];
-                 foreach ($datePeriods24 as $period) {
-                     $tableData[] = [
-                         'periodStart' => (string) $period->getStartDate(),
-                         'periodEnd' => (string) $period->getEndDate(),
-                         'newsCount' => $model->getAttribute($model->getK($period->getStartDate(), 24)),
-                     ];
-                 }
+             ->expand(function (Coin $model) use ($datePeriods24, $datePeriods4) {
+                 $tableData24 = $model->getTableData($datePeriods24, 24);
+                 $tableData4 = $model->getTableData($datePeriods4, 4);
 
-                 $tableData[] = ['4 HOURS'];
-                 foreach ($datePeriods4 as $period) {
-                     $tableData[] = [
-                         'periodStart' => (string) $period->getStartDate(),
-                         'periodEnd' => (string) $period->getEndDate(),
-                         'newsCount' => $model->getAttribute($model->getK($period->getStartDate(), 4)),
-                     ];
-                 }
-
-                 return new Table(['periodStart', 'periodEnd', 'newsCount'], $tableData);
+                 return new Table(['periodStart', 'periodEnd', 'newsCount'], array_merge($tableData24, $tableData4));
              });
 
         $grid->column('googleAlertsNewsCountLastWeek', 'News Last Week')->sortable();
@@ -72,11 +56,12 @@ class CoinController extends Controller
                              ->body($grid);
     }
 
-    private function addNewsCountByPeriodsInQuery($q, $datePeriods)
+    private function addNewsCountByPeriodsInQuery($q, $datePeriods, $stepHours): void
     {
         foreach ($datePeriods as $period) {
             $q->withCount([
-                "googleAlertsNews as " . $this->getK($period->getStartDate(), 24) => function (Builder $query) use (
+                "googleAlertsNews as " . Coin::getK($period->getStartDate(), $stepHours) => function (Builder $query
+                ) use (
                     $period
                 ) {
                     $query->where('news_published_at', '>=', (string) $period->getStartDate());
@@ -86,15 +71,10 @@ class CoinController extends Controller
         }
     }
 
-    private function getK(Carbon|CarbonInterface $date, int $stepHours): string
-    {
-        return "K" . $date->getTimestamp() . 'stepHours' . $stepHours;
-    }
-
     /**
      * @return array<int, CarbonPeriod>
      */
-    public function getDatePeriods(int $stepHours): array
+    private function getDatePeriods(int $stepHours): array
     {
         $datePeriods = [];
         $startBig = Carbon::now()->subWeeks(2)->startOfDay()->addSecond(1);

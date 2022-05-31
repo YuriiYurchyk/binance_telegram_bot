@@ -77,25 +77,21 @@ class Coin extends Model
         return $q->where('google_alerts', true)->whereNotNull('google_alerts_url');
     }
 
-    public function getTableByDatePeriod($datePeriods): array
+    public function getTableData(array $datePeriods, int $stepHours): array
     {
+        $tableData[] = ["$stepHours HOURS"];
         foreach ($datePeriods as $period) {
-            $newsCount = $this->googleAlertsNews()
-                              ->where('news_published_at', '>=', (string) $period->getStartDate())
-                              ->where('news_published_at', '<=', (string) $period->getEndDate())
-                              ->count();
-
-            $newsCountByHour[] = [
+            $tableData[] = [
                 'periodStart' => (string) $period->getStartDate(),
                 'periodEnd' => (string) $period->getEndDate(),
-                'newsCount' => $newsCount,
+                'newsCount' => $this->getAttribute(self::getK($period->getStartDate(), $stepHours)),
             ];
         }
 
-        return $newsCountByHour;
+        return $tableData;
     }
 
-    public function getK(Carbon|CarbonInterface $date, int $stepHours): string
+    public static function getK(Carbon|CarbonInterface $date, int $stepHours): string
     {
         return "K" . $date->getTimestamp() . 'stepHours' . $stepHours;
     }
