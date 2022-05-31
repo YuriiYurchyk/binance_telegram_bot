@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 
 class Coin extends Model
 {
@@ -72,6 +74,31 @@ class Coin extends Model
 
     public static function scopeGoogleAlerts(Builder $q)
     {
-        return $q->where('google_alerts',true)->whereNotNull('google_alerts_url');
+        return $q->where('google_alerts', true)->whereNotNull('google_alerts_url');
     }
+
+    public function getTableByDatePeriod($datePeriods): array
+    {
+        foreach ($datePeriods as $period) {
+            $newsCount = $this->googleAlertsNews()
+                              ->where('news_published_at', '>=', (string) $period->getStartDate())
+                              ->where('news_published_at', '<=', (string) $period->getEndDate())
+                              ->count();
+
+            $newsCountByHour[] = [
+                'periodStart' => (string) $period->getStartDate(),
+                'periodEnd' => (string) $period->getEndDate(),
+                'newsCount' => $newsCount,
+            ];
+        }
+
+        return $newsCountByHour;
+    }
+
+    public function getK(Carbon|CarbonInterface $date, int $stepHours): string
+    {
+        return "K" . $date->getTimestamp() . 'stepHours' . $stepHours;
+    }
+
+
 }

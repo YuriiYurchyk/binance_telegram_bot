@@ -14,4 +14,5 @@ Route::group([
     $router->get('/', 'HomeController@index')->name('home');
 
     $router->resource('trading-pairs', \App\Admin\Controllers\TradingPairController::class);
+    $router->get('coins', [\App\Admin\Controllers\CoinController::class, 'index']);
 });
