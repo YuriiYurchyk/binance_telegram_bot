@@ -21,11 +21,9 @@ class BinanceDownloadSpotDataCommand extends Command
 
     public function handle()
     {
-        //        $this->createHandledFiles();
+        $this->createHandledFiles();
 
-        //        $this->downloadQueue();
-
-        $this->importQueue();
+        $this->downloadAndImportFiles();
 
         return 0;
     }
@@ -34,8 +32,8 @@ class BinanceDownloadSpotDataCommand extends Command
     {
         $handler = new BinanceDownloadHDataHandler();
 
-        $initStartDate = Carbon::now()->setYear(2017)->setMonth(05)->setDay(1);
-        $initEndDate = Carbon::now()->subDay();
+        $initStartDate = Carbon::now()->setYear(2022)->setMonth(05)->setDay(28);
+        $initEndDate = Carbon::now()->subDay(); // 29.05.22 processed
 
         /** @var Collection<int, TradingPair> $tradingPairs */
 
@@ -43,7 +41,7 @@ class BinanceDownloadSpotDataCommand extends Command
         $tradingPairs = TradingPair::orderBy('id')->get();
 
         foreach ($tradingPairs as $pair) {
-            $startDate = $pair->binance_added_at->clone();
+            $startDate = $initStartDate; // $pair->binance_added_at->clone();
             $endDate = $pair->binance_removed_at?->clone() ?: $initEndDate->clone();
 
             $handler->setTradingPair($pair);
@@ -51,42 +49,20 @@ class BinanceDownloadSpotDataCommand extends Command
         }
     }
 
-    private function downloadQueue()
-    {
-        HandledFiles::scopePeriod(HandledFiles::query(), new BinanceMonthlyVO())
-                    ->where('file_exists_on_binance', 1)
-                    ->where('handled_success', 0)
-                    ->eachById(function (HandledFiles $handledFile) {
-                        if ($handledFile->isFileAlreadyDownloaded()) {
-                            return;
-                        }
-
-                        DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
-                    });
-
-        HandledFiles::scopePeriod(HandledFiles::query(), new BinanceDailyVO())
-                    ->where('file_exists_on_binance', 1)
-                    ->where('handled_success', 0)
-                    ->whereHas('monthlyFile', function ($q) {
-                        $q->where('file_exists_on_binance', 0);
-                    })
-                    ->eachById(function (HandledFiles $handledFile) {
-                        if ($handledFile->isFileAlreadyDownloaded()) {
-                            return;
-                        }
-
-                        DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
-                    });
-    }
-
-    private function importQueue()
+    private function downloadAndImportFiles()
     {
         $q = HandledFiles::query();
         HandledFiles::scopePeriod($q, new BinanceMonthlyVO());
         HandledFiles::scopeFileExistsOnBinance($q);
         $q->where('handled_success', 0);
         $q->eachById(function (HandledFiles $handledFile) {
-            ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
+            if ($handledFile->isFileAlreadyDownloaded()) {
+                ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
+
+                return;
+            }
+
+            DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
         });
 
         $q = HandledFiles::query();
@@ -94,10 +70,16 @@ class BinanceDownloadSpotDataCommand extends Command
         HandledFiles::scopeFileExistsOnBinance($q);
         $q->where('handled_success', 0);
         $q->whereHas('monthlyFile', function ($q) {
-            HandledFiles::scopeFileExistsOnBinance($q, false);
+            $q->where('file_exists_on_binance', 0);
         });
         $q->eachById(function (HandledFiles $handledFile) {
-            ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
+            if ($handledFile->isFileAlreadyDownloaded()) {
+                ImportBinanceHistoryDataJob::dispatch($handledFile->id)->onQueue('import');
+
+                return;
+            }
+
+            DownloadBinanceData::dispatch($handledFile->id)->onQueue('download');
         });
     }
 }

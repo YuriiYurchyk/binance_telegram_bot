@@ -1,31 +1,26 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App\Services;
 
 use Carbon\Carbon;
 use App\Models\TradingPair;
 use App\Models\HandledFiles;
+use App\Enum\BinancePeriodVO;
+use App\Enum\BinanceDailyVO;
+use App\Enum\BinanceMonthlyVO;
 
 class BinanceDownloadHDataHandler
 {
-    private BinanceDownloadHDataService $monthlyDownloaderService;
-    private BinanceDownloadHDataService $dailyDownloaderService;
-
-    public function __construct()
-    {
-        $this->monthlyDownloaderService = BinanceDownloadHDataService::makeMonthlyDownloader();
-        $this->dailyDownloaderService = BinanceDownloadHDataService::makeDailyDownloader();
-    }
+    private TradingPair $tradingPair;
 
     public function setTradingPair(TradingPair $tradingPair): static
     {
-        $this->monthlyDownloaderService->setTradingPair($tradingPair);
-        $this->dailyDownloaderService->setTradingPair($tradingPair);
+        $this->tradingPair = $tradingPair;
 
         return $this;
     }
 
-    public function handlePeriod(Carbon $startDate, Carbon $endDate)
+    public function handlePeriod(Carbon $startDate, Carbon $endDate): void
     {
         while ($startDate->lte($endDate)) {
             $this->handleDate($startDate);
@@ -33,15 +28,13 @@ class BinanceDownloadHDataHandler
         }
     }
 
-    private function handleDate(Carbon $date)
+    private function handleDate(Carbon $date): void
     {
-        $this->monthlyDownloaderService->setDate($date);
-        $monthlyHandledFile = $this->monthlyDownloaderService->createHandledFileIfNotExists();
-
+        $monthlyHandledFile = $this->createHandledFileIfNotExists(new BinanceMonthlyVO(), $date);
         $this->handleMonthByDay($date, $monthlyHandledFile);
     }
 
-    private function handleMonthByDay(Carbon $month, HandledFiles $monthlyHandledFile)
+    private function handleMonthByDay(Carbon $month, HandledFiles $monthlyHandledFile): void
     {
         $startDate = $month->clone()->startOfMonth();
 
@@ -51,44 +44,28 @@ class BinanceDownloadHDataHandler
         };
 
         while ($startDate->lte($endDate)) {
-            $this->dailyDownloaderService->setDate($startDate);
-            $this->dailyDownloaderService->createHandledFileIfNotExists($monthlyHandledFile);
+            $this->createHandledFileIfNotExists(new BinanceDailyVO(), $startDate, $monthlyHandledFile);
 
             $startDate->addDay();
         }
     }
 
-    private function compressFile()
-    {
-        $csvFullPath = $this->monthlyDownloaderService->getFilenameFullPath('.csv');
-        $csvGzFullPath = $this->monthlyDownloaderService->getFilenameFullPath('.csv.gz');
-        $zipFullPath = $this->monthlyDownloaderService->getFilenameFullPath('.zip');
+    private function createHandledFileIfNotExists(
+        BinancePeriodVO $period,
+        Carbon $date,
+        HandledFiles $monthlyHandledFile = null
+    ): HandledFiles {
+        $fileNameCsv = HandledFiles::generateFilename($this->tradingPair, $period, $date, '.csv');
 
-        //        if (file_exists($zipFullPath)) {
-        //            unlink($zipFullPath);
-        //            var_dump('unlink ' . $zipFullPath);
-        //        }
-
-        $csvGzExists = file_exists($csvGzFullPath);
-        $csvExists = file_exists($csvFullPath);
-
-        if ($csvGzExists && $csvExists) {
-            unlink($csvFullPath);
-            var_dump('unlink ' . $csvFullPath);
-
-            return true;
+        $handledFile = HandledFiles::where('file_name', $fileNameCsv)->first();
+        if (empty($handledFile)) {
+            $handledFile = HandledFiles::createModel($this->tradingPair, $period, $date);
+        }
+        if ($monthlyHandledFile) {
+            $monthlyHandledFile->dailyFiles()->save($handledFile);
         }
 
-        if ($csvGzExists) {
-            return true;
-        }
-
-        if (!$csvExists) {
-            return true;
-        }
-
-        var_dump('compress ' . $csvFullPath);
-        copy($csvFullPath, 'compress.zlib:///' . trim($csvGzFullPath, '/'));
-        unlink($csvFullPath);
+        return $handledFile;
     }
+
 }

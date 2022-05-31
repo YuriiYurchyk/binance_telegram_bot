@@ -9,12 +9,13 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use ZipArchive;
 use App\Models\HandledFiles;
+use Exception;
 
 class DownloadBinanceData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private string  $fileNameNoExt;
+    private string $fileNameNoExt;
 
     private ?string $destinationPath;
 
@@ -27,12 +28,23 @@ class DownloadBinanceData implements ShouldQueue
     {
         $handledFile = HandledFiles::findOrFail($this->handledFileId);
 
-
         $destinationPath = $handledFile->getDestinationPath();
         $this->createDestinationFolder($destinationPath);
 
         $url = $handledFile->getBinanceFileUrl();
-        $content = file_get_contents($url);
+
+        try {
+            $content = file_get_contents($url);
+        } catch (\Exception $e) {
+            if (str_contains($e->getMessage(), '404')) {
+                $handledFile->file_exists_on_binance = false;
+                $handledFile->save();
+
+                return;
+            }
+
+            throw new Exception('Not found ' . $url);
+        }
 
         $tempPath = storage_path('app');
         $tempPathWithFilenameZip = $tempPath . '/' . $handledFile->getFilename('.zip');
@@ -47,7 +59,7 @@ class DownloadBinanceData implements ShouldQueue
 
         $tempPathCsv = $tempPath . '/' . $handledFile->getFilename('.csv');
         $contentFromTemp = file_get_contents($tempPathCsv);
-        $csvFullPath =  $handledFile->getFilenameFullPath('.csv');
+        $csvFullPath = $handledFile->getFilenameFullPath('.csv');
         file_put_contents($csvFullPath, $contentFromTemp);
 
         unlink($tempPathCsv);
