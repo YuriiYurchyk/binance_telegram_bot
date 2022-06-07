@@ -25,7 +25,7 @@ class GoogleAlertsParserCommand extends Command
         $coinsWithAlert = Coin::scopeGoogleAlerts(Coin::query())->get();
 
         foreach ($coinsWithAlert as $coin) {
-            ParseGoogleAlertsJob::dispatch($coin->id);
+            ParseGoogleAlertsJob::dispatch($coin->id)->onQueue('google:parse-alerts');
         }
 
         return 0;

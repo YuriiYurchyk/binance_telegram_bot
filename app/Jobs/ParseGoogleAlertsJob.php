@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use App\Models\GoogleAlertsNews;
 use App\Models\Coin;
 use Log;
+use DB;
+use Exception;
 
 class ParseGoogleAlertsJob implements ShouldQueue
 {
@@ -31,7 +33,14 @@ class ParseGoogleAlertsJob implements ShouldQueue
 
     private function handleCoinAlert(Coin $coin): void
     {
-        $xml = file_get_contents($coin->google_alerts_url);
+        try {
+            $xml = file_get_contents($coin->google_alerts_url);
+        } catch (Exception $e) {
+            DB::table('jobs')->where('queue', 'google:parse-alerts')->delete();
+
+            throw $e;
+        }
+
         $alerts = $this->xmlToArray($xml);
 
         $entries = $alerts['entry'] ?? [];
