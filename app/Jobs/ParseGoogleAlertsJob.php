@@ -58,7 +58,7 @@ class ParseGoogleAlertsJob implements ShouldQueue
         $googleAlertNews = GoogleAlertsNews::where('url', $url)->first();
         if (!$googleAlertNews) {
             $data = [
-                'title' => $entry['title'],
+                'title' => is_string($entry['title']) ? $entry['title'] : '',
                 'url' => $url,
                 'content' => is_string($entry['content']) ? $entry['content'] : '',
                 'news_published_at' => Carbon::parse($entry['published']),
